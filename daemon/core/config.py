@@ -90,7 +90,7 @@ class ConfigShim(object):
             message_type=flags,
             node=node_id,
             object=configurable_options.name,
-            type=type_flags,
+            type=type_flags.value,
             data_types=tuple(data_types),
             data_values=key_values,
             captions=captions,
