@@ -26,7 +26,7 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
                       label="Enable SDT3D output"),
         Configuration(_id="sdturl", _type=ConfigDataTypes.STRING, default=Sdt.DEFAULT_SDT_URL, label="SDT3D URL")
     ]
-    config_type = RegisterTlvs.UTILITY.value
+    config_type = RegisterTlvs.UTILITY
 
     def __init__(self):
         super(SessionConfig, self).__init__()
@@ -59,4 +59,4 @@ class SessionMetaData(ConfigurableManager):
     The data is not otherwise interpreted or processed.
     """
     name = "metadata"
-    config_type = RegisterTlvs.UTILITY.value
+    config_type = RegisterTlvs.UTILITY
