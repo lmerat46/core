@@ -59,7 +59,7 @@ class EmaneManager(ModelManager):
     emulation, and for controlling the EMANE daemons.
     """
     name = "emane"
-    config_type = RegisterTlvs.EMULATION_SERVER.value
+    config_type = RegisterTlvs.EMULATION_SERVER
     SUCCESS, NOT_NEEDED, NOT_READY = (0, 1, 2)
     EVENTCFGVAR = "LIBEMANEEVENTSERVICECONFIG"
     DEFAULT_LOG_LEVEL = 3
@@ -87,6 +87,7 @@ class EmaneManager(ModelManager):
         self.emane_config = EmaneGlobalModel(session)
         self.set_configs(self.emane_config.default_values())
 
+        # TODO: get this out of emanemanger.py
         session.broker.handlers.add(self.handledistributed)
         self.service = None
         self.event_device = None
@@ -378,12 +379,15 @@ class EmaneManager(ModelManager):
             self.stopdaemons()
             self.stopeventmonitor()
 
+
+    # TODO: Move distributed code out of emanemanager.py
     def handledistributed(self, message):
         """
         Broker handler for processing CORE API messages as they are
         received. This is used to snoop the Link add messages to get NEM
         counts of NEMs that exist on other servers.
         """
+        # TODO: come back to this
         if message.message_type == MessageTypes.LINK.value and message.flags & MessageFlags.ADD.value:
             nn = message.node_numbers()
             # first node is always link layer node in Link add message
@@ -396,6 +400,7 @@ class EmaneManager(ModelManager):
                         else:
                             self._ifccounts[server] += 1
 
+    # TODO: Move distributed code out of emanemanger.py
     def checkdistributed(self):
         """
         Check for EMANE nodes that exist on multiple emulation servers and
@@ -443,7 +448,7 @@ class EmaneManager(ModelManager):
                 continue
 
             platformid += 1
-            typeflags = ConfigFlags.UPDATE.value
+            typeflags = ConfigFlags.UPDATE
             self.set_config("platform_id_start", str(platformid))
             self.set_config("nem_id_start", str(nemid))
             config_data = ConfigShim.config_data(0, None, typeflags, self.emane_config, self.get_configs())
@@ -497,6 +502,7 @@ class EmaneManager(ModelManager):
         logging.info("Setting up default controlnet prefixes for distributed (%d configured)" % len(prefixes))
         prefixes = ctrlnet.DEFAULT_PREFIX_LIST[0]
         vals = 'controlnet="%s"' % prefixes
+        # TODO: Move TLV  out of emanemanger.py
         tlvdata = b""
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.OBJECT.value, "session")
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.TYPE.value, 0)
