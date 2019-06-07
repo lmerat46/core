@@ -35,7 +35,7 @@ class MobilityManager(ModelManager):
     range models.
     """
     name = "MobilityManager"
-    config_type = RegisterTlvs.WIRELESS.value
+    config_type = RegisterTlvs.WIRELESS
 
     def __init__(self, session):
         """
@@ -114,7 +114,7 @@ class MobilityManager(ModelManager):
                 logging.warning("Ignoring event for unknown model '%s'", model)
                 continue
 
-            if cls.config_type in [RegisterTlvs.WIRELESS.value, RegisterTlvs.MOBILITY.value]:
+            if cls.config_type in [RegisterTlvs.WIRELESS, RegisterTlvs.MOBILITY]:
                 model = node.mobility
             else:
                 continue
@@ -127,11 +127,11 @@ class MobilityManager(ModelManager):
                 logging.warning("Ignoring event for %s wrong model %s,%s", node.name, cls.name, model.name)
                 continue
 
-            if event_type == EventTypes.STOP.value or event_type == EventTypes.RESTART.value:
+            if event_type == EventTypes.STOP or event_type == EventTypes.RESTART:
                 model.stop(move_initial=True)
-            if event_type == EventTypes.START.value or event_type == EventTypes.RESTART.value:
+            if event_type == EventTypes.START or event_type == EventTypes.RESTART:
                 model.start()
-            if event_type == EventTypes.PAUSE.value:
+            if event_type == EventTypes.PAUSE:
                 model.pause()
 
     def sendevent(self, model):
@@ -142,20 +142,21 @@ class MobilityManager(ModelManager):
         :param WayPointMobility model: mobility model to send event for
         :return: nothing
         """
-        event_type = EventTypes.NONE.value
+        event_type = EventTypes.NONE
         if model.state == model.STATE_STOPPED:
-            event_type = EventTypes.STOP.value
+            event_type = EventTypes.STOP
         elif model.state == model.STATE_RUNNING:
-            event_type = EventTypes.START.value
+            event_type = EventTypes.START
         elif model.state == model.STATE_PAUSED:
-            event_type = EventTypes.PAUSE.value
+            event_type = EventTypes.PAUSE
 
         data = "start=%d" % int(model.lasttime - model.timezero)
         data += " end=%d" % int(model.endtime)
 
         event_data = EventData(
             node=model.id,
-            event_type=event_type,
+            # TODO: come back to these
+            event_type=event_type.value,
             name="mobility:%s" % model.name,
             data=data,
             time="%s" % time.time()
@@ -208,7 +209,7 @@ class MobilityManager(ModelManager):
         :param message: link message to handle
         :return: nothing
         """
-        if message.message_type == MessageTypes.LINK.value and message.flags & MessageFlags.ADD.value:
+        if message.message_type == MessageTypes.LINK and message.flags & MessageFlags.ADD:
             nn = message.node_numbers()
             # first node is always link layer node in Link add message
             if nn[0] not in self.session.broker.network_nodes:
@@ -230,8 +231,8 @@ class MobilityManager(ModelManager):
         nodenum = message.node_numbers()[0]
         try:
             dummy = self.phys[nodenum]
-            nodexpos = message.get_tlv(NodeTlvs.X_POSITION.value)
-            nodeypos = message.get_tlv(NodeTlvs.Y_POSITION.value)
+            nodexpos = message.get_tlv(NodeTlvs.X_POSITION)
+            nodeypos = message.get_tlv(NodeTlvs.Y_POSITION)
             dummy.setposition(nodexpos, nodeypos, None)
         except KeyError:
             logging.exception("error retrieving physical node: %s", nodenum)
@@ -263,7 +264,7 @@ class WirelessModel(ConfigurableOptions):
     Base class used by EMANE models and the basic range model.
     Used for managing arbitrary configuration parameters.
     """
-    config_type = RegisterTlvs.WIRELESS.value
+    config_type = RegisterTlvs.WIRELESS
     bitmap = None
     position_callback = None
 
@@ -526,7 +527,7 @@ class BasicRangeModel(WirelessModel):
             node1_id=interface1.node.id,
             node2_id=interface2.node.id,
             network_id=self.wlan.id,
-            link_type=LinkTypes.WIRELESS.value
+            link_type=LinkTypes.WIRELESS
         )
 
     def sendlinkmsg(self, netif, netif2, unlink=False):
@@ -539,9 +540,9 @@ class BasicRangeModel(WirelessModel):
         :return: nothing
         """
         if unlink:
-            message_type = MessageFlags.DELETE.value
+            message_type = MessageFlags.DELETE
         else:
-            message_type = MessageFlags.ADD.value
+            message_type = MessageFlags.ADD
 
         link_data = self.create_link_data(netif, netif2, message_type)
         self.session.broadcast_link(link_data)
@@ -601,7 +602,7 @@ class WayPointMobility(WirelessModel):
     Abstract class for mobility models that set node waypoints.
     """
     name = "waypoint"
-    config_type = RegisterTlvs.MOBILITY.value
+    config_type = RegisterTlvs.MOBILITY
 
     STATE_STOPPED = 0
     STATE_RUNNING = 1

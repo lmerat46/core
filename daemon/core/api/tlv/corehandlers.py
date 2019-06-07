@@ -378,15 +378,15 @@ class CoreHandler(socketserver.BaseRequestHandler):
         tlv_data += coreapi.CoreRegisterTlv.pack(RegisterTlvs.EMULATION_SERVER.value, "core-daemon")
         tlv_data += coreapi.CoreRegisterTlv.pack(self.session.broker.config_type, self.session.broker.name)
         tlv_data += coreapi.CoreRegisterTlv.pack(self.session.location.config_type, self.session.location.name)
-        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.mobility.config_type, self.session.mobility.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.mobility.config_type.value, self.session.mobility.name)
         for model_name in self.session.mobility.models:
             model_class = self.session.mobility.models[model_name]
-            tlv_data += coreapi.CoreRegisterTlv.pack(model_class.config_type, model_class.name)
+            tlv_data += coreapi.CoreRegisterTlv.pack(model_class.config_type.value, model_class.name)
         tlv_data += coreapi.CoreRegisterTlv.pack(self.session.services.config_type.value, self.session.services.name)
         tlv_data += coreapi.CoreRegisterTlv.pack(self.session.emane.config_type.value, self.session.emane.name)
         for model_name in self.session.emane.models:
             model_class = self.session.emane.models[model_name]
-            tlv_data += coreapi.CoreRegisterTlv.pack(model_class.config_type, model_class.name)
+            tlv_data += coreapi.CoreRegisterTlv.pack(model_class.config_type.value, model_class.name)
         tlv_data += coreapi.CoreRegisterTlv.pack(self.session.options.config_type.value, self.session.options.name)
         tlv_data += coreapi.CoreRegisterTlv.pack(self.session.metadata.config_type.value, self.session.metadata.name)
 
