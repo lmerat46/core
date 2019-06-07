@@ -281,7 +281,7 @@ class CoreServices(object):
     custom service configuration. A CoreService is not a Configurable.
     """
     name = "services"
-    config_type = RegisterTlvs.UTILITY.value
+    config_type = RegisterTlvs.UTILITY
 
     def __init__(self, session):
         """
@@ -581,6 +581,8 @@ class CoreServices(object):
                 status = -1
         return status
 
+
+    # TODO is this GUI specific, or would other uses need service files?
     def get_service_file(self, node, service_name, filename):
         """
         Send a File Message when the GUI has requested a service file.
