@@ -382,13 +382,13 @@ class CoreHandler(socketserver.BaseRequestHandler):
         for model_name in self.session.mobility.models:
             model_class = self.session.mobility.models[model_name]
             tlv_data += coreapi.CoreRegisterTlv.pack(model_class.config_type, model_class.name)
-        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.services.config_type, self.session.services.name)
-        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.emane.config_type, self.session.emane.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.services.config_type.value, self.session.services.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.emane.config_type.value, self.session.emane.name)
         for model_name in self.session.emane.models:
             model_class = self.session.emane.models[model_name]
             tlv_data += coreapi.CoreRegisterTlv.pack(model_class.config_type, model_class.name)
-        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.options.config_type, self.session.options.name)
-        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.metadata.config_type, self.session.metadata.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.options.config_type.value, self.session.options.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.metadata.config_type.value, self.session.metadata.name)
 
         return coreapi.CoreRegMessage.pack(MessageFlags.ADD.value, tlv_data)
 
