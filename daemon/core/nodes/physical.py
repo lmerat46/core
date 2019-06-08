@@ -251,7 +251,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
     RJ45Node is a physical interface on the host linked to the emulated
     network.
     """
-    apitype = NodeTypes.RJ45.value
+    apitype = NodeTypes.RJ45
     type = "rj45"
 
     def __init__(self, session, _id=None, name=None, mtu=1500, start=True):

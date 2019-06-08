@@ -99,7 +99,7 @@ def connect_to_session(sock, requested):
     """
     # request the session list
     tlvdata = coreapi.CoreSessionTlv.pack(SessionTlvs.NUMBER.value, "")
-    flags = MessageFlags.STRING.value
+    flags = MessageFlags.STRING
     smsg = coreapi.CoreSessionMessage.pack(flags, tlvdata)
     sock.sendall(smsg)
 
@@ -109,7 +109,7 @@ def connect_to_session(sock, requested):
         print("disconnected")
         return False
 
-    sessstr = smsgreply.get_tlv(SessionTlvs.NUMBER.value)
+    sessstr = smsgreply.get_tlv(SessionTlvs.NUMBER)
     if sessstr is None:
         print("missing session numbers")
         return False
@@ -132,7 +132,7 @@ def connect_to_session(sock, requested):
 
     print("joining session: %s" % session)
     tlvdata = coreapi.CoreSessionTlv.pack(SessionTlvs.NUMBER.value, session)
-    flags = MessageFlags.ADD.value
+    flags = MessageFlags.ADD
     smsg = coreapi.CoreSessionMessage.pack(flags, tlvdata)
     sock.sendall(smsg)
     return True

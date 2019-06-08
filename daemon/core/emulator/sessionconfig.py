@@ -1,3 +1,5 @@
+import logging
+
 from core.config import ConfigurableManager
 from core.config import ConfigurableOptions
 from core.config import Configuration
@@ -34,6 +36,7 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
 
     def get_config(self, _id, node_id=ConfigurableManager._default_node,
                    config_type=ConfigurableManager._default_type, default=None):
+        logging.warning("getting config: node_id: %s, config_type %s, default %s", node_id, config_type, default)
         value = super(SessionConfig, self).get_config(_id, node_id, config_type, default)
         if value == "":
             value = default

@@ -59,15 +59,15 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         self.done = False
         self.message_handlers = {
-            MessageTypes.NODE.value: self.handle_node_message,
-            MessageTypes.LINK.value: self.handle_link_message,
-            MessageTypes.EXECUTE.value: self.handle_execute_message,
-            MessageTypes.REGISTER.value: self.handle_register_message,
-            MessageTypes.CONFIG.value: self.handle_config_message,
-            MessageTypes.FILE.value: self.handle_file_message,
-            MessageTypes.INTERFACE.value: self.handle_interface_message,
-            MessageTypes.EVENT.value: self.handle_event_message,
-            MessageTypes.SESSION.value: self.handle_session_message,
+            MessageTypes.NODE: self.handle_node_message,
+            MessageTypes.LINK: self.handle_link_message,
+            MessageTypes.EXECUTE: self.handle_execute_message,
+            MessageTypes.REGISTER: self.handle_register_message,
+            MessageTypes.CONFIG: self.handle_config_message,
+            MessageTypes.FILE: self.handle_file_message,
+            MessageTypes.INTERFACE: self.handle_interface_message,
+            MessageTypes.EVENT: self.handle_event_message,
+            MessageTypes.SESSION: self.handle_session_message,
         }
         self.message_queue = Queue()
         self.node_status_request = {}
@@ -376,8 +376,8 @@ class CoreHandler(socketserver.BaseRequestHandler):
         tlv_data = b""
         tlv_data += coreapi.CoreRegisterTlv.pack(RegisterTlvs.EXECUTE_SERVER.value, "core-daemon")
         tlv_data += coreapi.CoreRegisterTlv.pack(RegisterTlvs.EMULATION_SERVER.value, "core-daemon")
-        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.broker.config_type, self.session.broker.name)
-        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.location.config_type, self.session.location.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.broker.config_type.value, self.session.broker.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.location.config_type.value, self.session.location.name)
         tlv_data += coreapi.CoreRegisterTlv.pack(self.session.mobility.config_type.value, self.session.mobility.name)
         for model_name in self.session.mobility.models:
             model_class = self.session.mobility.models[model_name]
@@ -568,11 +568,11 @@ class CoreHandler(socketserver.BaseRequestHandler):
             self.queue_message(message)
 
             # delay is required for brief connections, allow session joining
-            if message.message_type == MessageTypes.SESSION.value:
+            if message.message_type == MessageTypes.SESSION:
                 time.sleep(0.125)
 
             # broadcast node/link messages to other connected clients
-            if message.message_type not in [MessageTypes.NODE.value, MessageTypes.LINK.value]:
+            if message.message_type not in [MessageTypes.NODE, MessageTypes.LINK]:
                 continue
 
             for client in self.session.broker.session_clients:
@@ -633,38 +633,38 @@ class CoreHandler(socketserver.BaseRequestHandler):
             return ()
 
         node_type = None
-        node_type_value = message.get_tlv(NodeTlvs.TYPE.value)
+        node_type_value = message.get_tlv(NodeTlvs.TYPE)
         if node_type_value is not None:
             node_type = NodeTypes(node_type_value)
 
-        node_id = message.get_tlv(NodeTlvs.NUMBER.value)
+        node_id = message.get_tlv(NodeTlvs.NUMBER)
 
         node_options = NodeOptions(
-            name=message.get_tlv(NodeTlvs.NAME.value),
-            model=message.get_tlv(NodeTlvs.MODEL.value)
+            name=message.get_tlv(NodeTlvs.NAME),
+            model=message.get_tlv(NodeTlvs.MODEL)
         )
 
         node_options.set_position(
-            x=message.get_tlv(NodeTlvs.X_POSITION.value),
-            y=message.get_tlv(NodeTlvs.Y_POSITION.value)
+            x=message.get_tlv(NodeTlvs.X_POSITION),
+            y=message.get_tlv(NodeTlvs.Y_POSITION)
         )
 
-        lat = message.get_tlv(NodeTlvs.LATITUDE.value)
+        lat = message.get_tlv(NodeTlvs.LATITUDE)
         if lat is not None:
             lat = float(lat)
-        lon = message.get_tlv(NodeTlvs.LONGITUDE.value)
+        lon = message.get_tlv(NodeTlvs.LONGITUDE)
         if lon is not None:
             lon = float(lon)
-        alt = message.get_tlv(NodeTlvs.ALTITUDE.value)
+        alt = message.get_tlv(NodeTlvs.ALTITUDE)
         if alt is not None:
             alt = float(alt)
         node_options.set_location(lat=lat, lon=lon, alt=alt)
 
-        node_options.icon = message.get_tlv(NodeTlvs.ICON.value)
-        node_options.canvas = message.get_tlv(NodeTlvs.CANVAS.value)
-        node_options.opaque = message.get_tlv(NodeTlvs.OPAQUE.value)
+        node_options.icon = message.get_tlv(NodeTlvs.ICON)
+        node_options.canvas = message.get_tlv(NodeTlvs.CANVAS)
+        node_options.opaque = message.get_tlv(NodeTlvs.OPAQUE)
 
-        services = message.get_tlv(NodeTlvs.SERVICES.value)
+        services = message.get_tlv(NodeTlvs.SERVICES)
         if services:
             node_options.services = services.split("|")
 
@@ -699,49 +699,49 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :param coreapi.CoreLinkMessage message: link message to handle
         :return: link message replies
         """
-        node_one_id = message.get_tlv(LinkTlvs.N1_NUMBER.value)
-        node_two_id = message.get_tlv(LinkTlvs.N2_NUMBER.value)
+        node_one_id = message.get_tlv(LinkTlvs.N1_NUMBER)
+        node_two_id = message.get_tlv(LinkTlvs.N2_NUMBER)
 
         interface_one = InterfaceData(
-            _id=message.get_tlv(LinkTlvs.INTERFACE1_NUMBER.value),
-            name=message.get_tlv(LinkTlvs.INTERFACE1_NAME.value),
-            mac=message.get_tlv(LinkTlvs.INTERFACE1_MAC.value),
-            ip4=message.get_tlv(LinkTlvs.INTERFACE1_IP4.value),
-            ip4_mask=message.get_tlv(LinkTlvs.INTERFACE1_IP4_MASK.value),
-            ip6=message.get_tlv(LinkTlvs.INTERFACE1_IP6.value),
-            ip6_mask=message.get_tlv(LinkTlvs.INTERFACE1_IP6_MASK.value),
+            _id=message.get_tlv(LinkTlvs.INTERFACE1_NUMBER),
+            name=message.get_tlv(LinkTlvs.INTERFACE1_NAME),
+            mac=message.get_tlv(LinkTlvs.INTERFACE1_MAC),
+            ip4=message.get_tlv(LinkTlvs.INTERFACE1_IP4),
+            ip4_mask=message.get_tlv(LinkTlvs.INTERFACE1_IP4_MASK),
+            ip6=message.get_tlv(LinkTlvs.INTERFACE1_IP6),
+            ip6_mask=message.get_tlv(LinkTlvs.INTERFACE1_IP6_MASK),
         )
         interface_two = InterfaceData(
-            _id=message.get_tlv(LinkTlvs.INTERFACE2_NUMBER.value),
-            name=message.get_tlv(LinkTlvs.INTERFACE2_NAME.value),
-            mac=message.get_tlv(LinkTlvs.INTERFACE2_MAC.value),
-            ip4=message.get_tlv(LinkTlvs.INTERFACE2_IP4.value),
-            ip4_mask=message.get_tlv(LinkTlvs.INTERFACE2_IP4_MASK.value),
-            ip6=message.get_tlv(LinkTlvs.INTERFACE2_IP6.value),
-            ip6_mask=message.get_tlv(LinkTlvs.INTERFACE2_IP6_MASK.value),
+            _id=message.get_tlv(LinkTlvs.INTERFACE2_NUMBER),
+            name=message.get_tlv(LinkTlvs.INTERFACE2_NAME),
+            mac=message.get_tlv(LinkTlvs.INTERFACE2_MAC),
+            ip4=message.get_tlv(LinkTlvs.INTERFACE2_IP4),
+            ip4_mask=message.get_tlv(LinkTlvs.INTERFACE2_IP4_MASK),
+            ip6=message.get_tlv(LinkTlvs.INTERFACE2_IP6),
+            ip6_mask=message.get_tlv(LinkTlvs.INTERFACE2_IP6_MASK),
         )
 
         link_type = None
-        link_type_value = message.get_tlv(LinkTlvs.TYPE.value)
+        link_type_value = message.get_tlv(LinkTlvs.TYPE)
         if link_type_value is not None:
             link_type = LinkTypes(link_type_value)
 
         link_options = LinkOptions(_type=link_type)
-        link_options.delay = message.get_tlv(LinkTlvs.DELAY.value)
-        link_options.bandwidth = message.get_tlv(LinkTlvs.BANDWIDTH.value)
-        link_options.session = message.get_tlv(LinkTlvs.SESSION.value)
-        link_options.per = message.get_tlv(LinkTlvs.PER.value)
-        link_options.dup = message.get_tlv(LinkTlvs.DUP.value)
-        link_options.jitter = message.get_tlv(LinkTlvs.JITTER.value)
-        link_options.mer = message.get_tlv(LinkTlvs.MER.value)
-        link_options.burst = message.get_tlv(LinkTlvs.BURST.value)
-        link_options.mburst = message.get_tlv(LinkTlvs.MBURST.value)
-        link_options.gui_attributes = message.get_tlv(LinkTlvs.GUI_ATTRIBUTES.value)
-        link_options.unidirectional = message.get_tlv(LinkTlvs.UNIDIRECTIONAL.value)
-        link_options.emulation_id = message.get_tlv(LinkTlvs.EMULATION_ID.value)
-        link_options.network_id = message.get_tlv(LinkTlvs.NETWORK_ID.value)
-        link_options.key = message.get_tlv(LinkTlvs.KEY.value)
-        link_options.opaque = message.get_tlv(LinkTlvs.OPAQUE.value)
+        link_options.delay = message.get_tlv(LinkTlvs.DELAY)
+        link_options.bandwidth = message.get_tlv(LinkTlvs.BANDWIDTH)
+        link_options.session = message.get_tlv(LinkTlvs.SESSION)
+        link_options.per = message.get_tlv(LinkTlvs.PER)
+        link_options.dup = message.get_tlv(LinkTlvs.DUP)
+        link_options.jitter = message.get_tlv(LinkTlvs.JITTER)
+        link_options.mer = message.get_tlv(LinkTlvs.MER)
+        link_options.burst = message.get_tlv(LinkTlvs.BURST)
+        link_options.mburst = message.get_tlv(LinkTlvs.MBURST)
+        link_options.gui_attributes = message.get_tlv(LinkTlvs.GUI_ATTRIBUTES)
+        link_options.unidirectional = message.get_tlv(LinkTlvs.UNIDIRECTIONAL)
+        link_options.emulation_id = message.get_tlv(LinkTlvs.EMULATION_ID)
+        link_options.network_id = message.get_tlv(LinkTlvs.NETWORK_ID)
+        link_options.key = message.get_tlv(LinkTlvs.KEY)
+        link_options.opaque = message.get_tlv(LinkTlvs.OPAQUE)
 
         if message.flags & MessageFlags.ADD.value:
             self.session.add_link(node_one_id, node_two_id, interface_one, interface_two, link_options)
@@ -759,10 +759,10 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :param coreapi.CoreExecMessage message: execute message to handle
         :return: reply messages
         """
-        node_num = message.get_tlv(ExecuteTlvs.NODE.value)
-        execute_num = message.get_tlv(ExecuteTlvs.NUMBER.value)
-        execute_time = message.get_tlv(ExecuteTlvs.TIME.value)
-        command = message.get_tlv(ExecuteTlvs.COMMAND.value)
+        node_num = message.get_tlv(ExecuteTlvs.NODE)
+        execute_num = message.get_tlv(ExecuteTlvs.NUMBER)
+        execute_time = message.get_tlv(ExecuteTlvs.TIME)
+        command = message.get_tlv(ExecuteTlvs.COMMAND)
 
         # local flag indicates command executed locally, not on a node
         if node_num is None and not message.flags & MessageFlags.LOCAL.value:
@@ -837,7 +837,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         replies = []
 
         # execute a Python script or XML file
-        execute_server = message.get_tlv(RegisterTlvs.EXECUTE_SERVER.value)
+        execute_server = message.get_tlv(RegisterTlvs.EXECUTE_SERVER)
         if execute_server:
             try:
                 logging.info("executing: %s", execute_server)
@@ -899,7 +899,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
             return replies
 
-        gui = message.get_tlv(RegisterTlvs.GUI.value)
+        gui = message.get_tlv(RegisterTlvs.GUI)
         if gui is None:
             logging.debug("ignoring Register message")
         else:
@@ -928,19 +928,19 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         # convert config message to standard config data object
         config_data = ConfigData(
-            node=message.get_tlv(ConfigTlvs.NODE.value),
-            object=message.get_tlv(ConfigTlvs.OBJECT.value),
-            type=message.get_tlv(ConfigTlvs.TYPE.value),
-            data_types=message.get_tlv(ConfigTlvs.DATA_TYPES.value),
-            data_values=message.get_tlv(ConfigTlvs.VALUES.value),
-            captions=message.get_tlv(ConfigTlvs.CAPTIONS.value),
-            bitmap=message.get_tlv(ConfigTlvs.BITMAP.value),
-            possible_values=message.get_tlv(ConfigTlvs.POSSIBLE_VALUES.value),
-            groups=message.get_tlv(ConfigTlvs.GROUPS.value),
-            session=message.get_tlv(ConfigTlvs.SESSION.value),
-            interface_number=message.get_tlv(ConfigTlvs.INTERFACE_NUMBER.value),
-            network_id=message.get_tlv(ConfigTlvs.NETWORK_ID.value),
-            opaque=message.get_tlv(ConfigTlvs.OPAQUE.value)
+            node=message.get_tlv(ConfigTlvs.NODE),
+            object=message.get_tlv(ConfigTlvs.OBJECT),
+            type=message.get_tlv(ConfigTlvs.TYPE),
+            data_types=message.get_tlv(ConfigTlvs.DATA_TYPES),
+            data_values=message.get_tlv(ConfigTlvs.VALUES),
+            captions=message.get_tlv(ConfigTlvs.CAPTIONS),
+            bitmap=message.get_tlv(ConfigTlvs.BITMAP),
+            possible_values=message.get_tlv(ConfigTlvs.POSSIBLE_VALUES),
+            groups=message.get_tlv(ConfigTlvs.GROUPS),
+            session=message.get_tlv(ConfigTlvs.SESSION),
+            interface_number=message.get_tlv(ConfigTlvs.INTERFACE_NUMBER),
+            network_id=message.get_tlv(ConfigTlvs.NETWORK_ID),
+            opaque=message.get_tlv(ConfigTlvs.OPAQUE)
         )
         logging.debug("configuration message for %s node %s", config_data.object, config_data.node)
         message_type = ConfigFlags(config_data.type)
@@ -1345,12 +1345,12 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :return: reply messages
         """
         if message.flags & MessageFlags.ADD.value:
-            node_num = message.get_tlv(FileTlvs.NODE.value)
-            file_name = message.get_tlv(FileTlvs.NAME.value)
-            file_type = message.get_tlv(FileTlvs.TYPE.value)
-            source_name = message.get_tlv(FileTlvs.SOURCE_NAME.value)
-            data = message.get_tlv(FileTlvs.DATA.value)
-            compressed_data = message.get_tlv(FileTlvs.COMPRESSED_DATA.value)
+            node_num = message.get_tlv(FileTlvs.NODE)
+            file_name = message.get_tlv(FileTlvs.NAME)
+            file_type = message.get_tlv(FileTlvs.TYPE)
+            source_name = message.get_tlv(FileTlvs.SOURCE_NAME)
+            data = message.get_tlv(FileTlvs.DATA)
+            compressed_data = message.get_tlv(FileTlvs.COMPRESSED_DATA)
 
             if compressed_data:
                 logging.warning("Compressed file data not implemented for File message.")
@@ -1409,12 +1409,12 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :return: reply messages
         """
         event_data = EventData(
-            node=message.get_tlv(EventTlvs.NODE.value),
-            event_type=message.get_tlv(EventTlvs.TYPE.value),
-            name=message.get_tlv(EventTlvs.NAME.value),
-            data=message.get_tlv(EventTlvs.DATA.value),
-            time=message.get_tlv(EventTlvs.TIME.value),
-            session=message.get_tlv(EventTlvs.SESSION.value)
+            node=message.get_tlv(EventTlvs.NODE),
+            event_type=message.get_tlv(EventTlvs.TYPE),
+            name=message.get_tlv(EventTlvs.NAME),
+            data=message.get_tlv(EventTlvs.DATA),
+            time=message.get_tlv(EventTlvs.TIME),
+            session=message.get_tlv(EventTlvs.SESSION)
         )
 
         if event_data.event_type is None:
@@ -1576,14 +1576,14 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :param coreapi.CoreSessionMessage message: session message to handle
         :return: reply messages
         """
-        session_id_str = message.get_tlv(SessionTlvs.NUMBER.value)
+        session_id_str = message.get_tlv(SessionTlvs.NUMBER)
         session_ids = coreapi.str_to_list(session_id_str)
-        name_str = message.get_tlv(SessionTlvs.NAME.value)
+        name_str = message.get_tlv(SessionTlvs.NAME)
         names = coreapi.str_to_list(name_str)
-        file_str = message.get_tlv(SessionTlvs.FILE.value)
+        file_str = message.get_tlv(SessionTlvs.FILE)
         files = coreapi.str_to_list(file_str)
-        thumb = message.get_tlv(SessionTlvs.THUMB.value)
-        user = message.get_tlv(SessionTlvs.USER.value)
+        thumb = message.get_tlv(SessionTlvs.THUMB)
+        user = message.get_tlv(SessionTlvs.USER)
         logging.debug("SESSION message flags=0x%x sessions=%s" % (message.flags, session_id_str))
 
         if message.flags == 0:

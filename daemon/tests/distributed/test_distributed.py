@@ -24,7 +24,7 @@ def validate_response(replies, _):
     header = response[:CoreExecMessage.header_len]
     tlv_data = response[CoreExecMessage.header_len:]
     response = CoreExecMessage(MessageFlags.TEXT, header, tlv_data)
-    assert not response.get_tlv(ExecuteTlvs.STATUS.value)
+    assert not response.get_tlv(ExecuteTlvs.STATUS)
 
 
 class TestDistributed:

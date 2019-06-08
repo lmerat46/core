@@ -91,10 +91,10 @@ def run_cmd(node, exec_cmd):
 
         # If we get the right response return the results
         print("received response message: %s" % message_type)
-        if message_type == MessageTypes.EXECUTE.value:
+        if message_type == MessageTypes.EXECUTE:
             message = coreapi.CoreExecMessage(message_flags, message_header, message_data)
-            result = message.get_tlv(ExecuteTlvs.RESULT.value)
-            status = message.get_tlv(ExecuteTlvs.STATUS.value)
+            result = message.get_tlv(ExecuteTlvs.RESULT)
+            status = message.get_tlv(ExecuteTlvs.STATUS)
             break
 
     return result, status
@@ -139,7 +139,7 @@ class TestGui:
         switch.server = daemon
 
         # retrieve switch data representation, create a switch message for broker to handle
-        switch_data = switch.data(MessageFlags.ADD.value)
+        switch_data = switch.data(MessageFlags.ADD)
         switch_message = dataconversion.convert_node(switch_data)
         session.broker.handlerawmsg(switch_message)
 
@@ -153,7 +153,7 @@ class TestGui:
 
         # create node messages for the broker to handle
         for node in [node_one, node_two]:
-            node_data = node.data(MessageFlags.ADD.value)
+            node_data = node.data(MessageFlags.ADD)
             node_message = dataconversion.convert_node(node_data)
             session.broker.handlerawmsg(node_message)
 

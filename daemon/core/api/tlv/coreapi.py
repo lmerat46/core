@@ -705,7 +705,7 @@ class CoreMessage(object):
         :param tlv_data: data to get length from for packing
         :return: combined header and tlv data
         """
-        header = struct.pack(cls.header_format, cls.message_type, message_flags, len(tlv_data))
+        header = struct.pack(cls.header_format, cls.message_type.value, message_flags, len(tlv_data))
         return header + tlv_data
 
     def add_tlv_data(self, key, value):
@@ -725,10 +725,10 @@ class CoreMessage(object):
         """
         Retrieve TLV data from data map.
 
-        :param int tlv_type: type of data to retrieve
+        :param tlv_type: some sort of enumeration type of data to retrieve
         :return: TLV type data
         """
-        return self.tlv_data.get(tlv_type)
+        return self.tlv_data.get(tlv_type.value)
 
     def parse_data(self, data):
         """
@@ -828,21 +828,21 @@ class CoreMessage(object):
         number2 = None
 
         # not all messages have node numbers
-        if self.message_type == MessageTypes.NODE.value:
-            number1 = self.get_tlv(NodeTlvs.NUMBER.value)
-        elif self.message_type == MessageTypes.LINK.value:
-            number1 = self.get_tlv(LinkTlvs.N1_NUMBER.value)
-            number2 = self.get_tlv(LinkTlvs.N2_NUMBER.value)
-        elif self.message_type == MessageTypes.EXECUTE.value:
-            number1 = self.get_tlv(ExecuteTlvs.NODE.value)
-        elif self.message_type == MessageTypes.CONFIG.value:
-            number1 = self.get_tlv(ConfigTlvs.NODE.value)
-        elif self.message_type == MessageTypes.FILE.value:
-            number1 = self.get_tlv(FileTlvs.NODE.value)
-        elif self.message_type == MessageTypes.INTERFACE.value:
-            number1 = self.get_tlv(InterfaceTlvs.NODE.value)
-        elif self.message_type == MessageTypes.EVENT.value:
-            number1 = self.get_tlv(EventTlvs.NODE.value)
+        if self.message_type == MessageTypes.NODE:
+            number1 = self.get_tlv(NodeTlvs.NUMBER)
+        elif self.message_type == MessageTypes.LINK:
+            number1 = self.get_tlv(LinkTlvs.N1_NUMBER)
+            number2 = self.get_tlv(LinkTlvs.N2_NUMBER)
+        elif self.message_type == MessageTypes.EXECUTE:
+            number1 = self.get_tlv(ExecuteTlvs.NODE)
+        elif self.message_type == MessageTypes.CONFIG:
+            number1 = self.get_tlv(ConfigTlvs.NODE)
+        elif self.message_type == MessageTypes.FILE:
+            number1 = self.get_tlv(FileTlvs.NODE)
+        elif self.message_type == MessageTypes.INTERFACE:
+            number1 = self.get_tlv(InterfaceTlvs.NODE)
+        elif self.message_type == MessageTypes.EVENT:
+            number1 = self.get_tlv(EventTlvs.NODE)
 
         result = []
 
@@ -860,13 +860,13 @@ class CoreMessage(object):
         """
         result = []
 
-        if self.message_type == MessageTypes.SESSION.value:
-            sessions = self.get_tlv(SessionTlvs.NUMBER.value)
-        elif self.message_type == MessageTypes.EXCEPTION.value:
-            sessions = self.get_tlv(ExceptionTlvs.SESSION.value)
+        if self.message_type == MessageTypes.SESSION:
+            sessions = self.get_tlv(SessionTlvs.NUMBER)
+        elif self.message_type == MessageTypes.EXCEPTION:
+            sessions = self.get_tlv(ExceptionTlvs.SESSION)
         else:
             # All other messages share TLV number 0xA for the session number(s).
-            sessions = self.get_tlv(NodeTlvs.SESSION.value)
+            sessions = self.get_tlv(NodeTlvs.SESSION)
 
         if sessions:
             for session_id in sessions.split("|"):
@@ -879,7 +879,7 @@ class CoreNodeMessage(CoreMessage):
     """
     CORE node message class.
     """
-    message_type = MessageTypes.NODE.value
+    message_type = MessageTypes.NODE
     tlv_class = CoreNodeTlv
 
 
@@ -887,7 +887,7 @@ class CoreLinkMessage(CoreMessage):
     """
     CORE link message class.
     """
-    message_type = MessageTypes.LINK.value
+    message_type = MessageTypes.LINK
     tlv_class = CoreLinkTlv
 
 
@@ -895,7 +895,7 @@ class CoreExecMessage(CoreMessage):
     """
     CORE execute message class.
     """
-    message_type = MessageTypes.EXECUTE.value
+    message_type = MessageTypes.EXECUTE
     tlv_class = CoreExecuteTlv
 
 
@@ -903,7 +903,7 @@ class CoreRegMessage(CoreMessage):
     """
     CORE register message class.
     """
-    message_type = MessageTypes.REGISTER.value
+    message_type = MessageTypes.REGISTER
     tlv_class = CoreRegisterTlv
 
 
@@ -911,7 +911,7 @@ class CoreConfMessage(CoreMessage):
     """
     CORE configuration message class.
     """
-    message_type = MessageTypes.CONFIG.value
+    message_type = MessageTypes.CONFIG
     tlv_class = CoreConfigTlv
 
 
@@ -919,7 +919,7 @@ class CoreFileMessage(CoreMessage):
     """
     CORE file message class.
     """
-    message_type = MessageTypes.FILE.value
+    message_type = MessageTypes.FILE
     tlv_class = CoreFileTlv
 
 
@@ -927,7 +927,7 @@ class CoreIfaceMessage(CoreMessage):
     """
     CORE interface message class.
     """
-    message_type = MessageTypes.INTERFACE.value
+    message_type = MessageTypes.INTERFACE
     tlv_class = CoreInterfaceTlv
 
 
@@ -935,7 +935,7 @@ class CoreEventMessage(CoreMessage):
     """
     CORE event message class.
     """
-    message_type = MessageTypes.EVENT.value
+    message_type = MessageTypes.EVENT
     tlv_class = CoreEventTlv
 
 
@@ -943,7 +943,7 @@ class CoreSessionMessage(CoreMessage):
     """
     CORE session message class.
     """
-    message_type = MessageTypes.SESSION.value
+    message_type = MessageTypes.SESSION
     tlv_class = CoreSessionTlv
 
 
@@ -951,22 +951,22 @@ class CoreExceptionMessage(CoreMessage):
     """
     CORE exception message class.
     """
-    message_type = MessageTypes.EXCEPTION.value
+    message_type = MessageTypes.EXCEPTION
     tlv_class = CoreExceptionTlv
 
 
 # map used to translate enumerated message type values to message class objects
 CLASS_MAP = {
-    MessageTypes.NODE.value: CoreNodeMessage,
-    MessageTypes.LINK.value: CoreLinkMessage,
-    MessageTypes.EXECUTE.value: CoreExecMessage,
-    MessageTypes.REGISTER.value: CoreRegMessage,
-    MessageTypes.CONFIG.value: CoreConfMessage,
-    MessageTypes.FILE.value: CoreFileMessage,
-    MessageTypes.INTERFACE.value: CoreIfaceMessage,
-    MessageTypes.EVENT.value: CoreEventMessage,
-    MessageTypes.SESSION.value: CoreSessionMessage,
-    MessageTypes.EXCEPTION.value: CoreExceptionMessage,
+    MessageTypes.NODE: CoreNodeMessage,
+    MessageTypes.LINK: CoreLinkMessage,
+    MessageTypes.EXECUTE: CoreExecMessage,
+    MessageTypes.REGISTER: CoreRegMessage,
+    MessageTypes.CONFIG: CoreConfMessage,
+    MessageTypes.FILE: CoreFileMessage,
+    MessageTypes.INTERFACE: CoreIfaceMessage,
+    MessageTypes.EVENT: CoreEventMessage,
+    MessageTypes.SESSION: CoreSessionMessage,
+    MessageTypes.EXCEPTION: CoreExceptionMessage,
 }
 
 

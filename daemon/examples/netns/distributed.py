@@ -88,7 +88,7 @@ def main():
         node.setposition(x=150 * i, y=150)
         n.append(node)
 
-    flags = MessageFlags.ADD.value
+    flags = MessageFlags.ADD
     session.broker.handlerawmsg(switch.tonodemsg(flags=flags))
 
     # create remote nodes via API

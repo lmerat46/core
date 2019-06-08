@@ -2,7 +2,7 @@
 Unit tests for testing CORE EMANE networks.
 """
 import os
-
+import logging
 import pytest
 
 from conftest import ping
@@ -33,7 +33,7 @@ class TestEmane:
         :param model: emane model to test
         :param ip_prefixes: generates ip addresses for nodes
         """
-
+        logging.warning("testing models: session %s, model: %s, ip_prefixes: %s", session, model, ip_prefixes)
         # create emane node for networking the core nodes
         emane_network = session.create_emane_network(
             model,
@@ -57,9 +57,11 @@ class TestEmane:
         for i, node in enumerate([node_one, node_two]):
             node.setposition(x=150 * (i + 1), y=150)
             interface = ip_prefixes.create_interface(node)
+            logging.warning("adding node, node_id: %s to session: %s", node.id, session)
             session.add_link(node.id, emane_network.id, interface_one=interface)
 
         # instantiate session
+        logging.warning("instantiating session")
         session.instantiate()
 
         # ping n2 from n1 and assert success

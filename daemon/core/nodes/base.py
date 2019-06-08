@@ -426,7 +426,7 @@ class CoreNode(CoreNodeBase):
     :var lock: threading.RLock
     :var _mounts: list[tuple[str, str]]
     """
-    apitype = NodeTypes.DEFAULT.value
+    apitype = NodeTypes.DEFAULT
     valid_address_types = {"inet", "inet6", "inet6link"}
 
     def __init__(self, session, _id=None, name=None, nodedir=None, bootsh="boot.sh", start=True):
@@ -966,7 +966,7 @@ class CoreNetworkBase(NodeBase):
     """
     Base class for networks
     """
-    linktype = LinkTypes.WIRED.value
+    linktype = LinkTypes.WIRED
 
     def __init__(self, session, _id, name, start=True):
         """

@@ -106,7 +106,7 @@ class Sdt(object):
         :param core.data.LinkData link_data: link data being updated
         :return: nothing
         """
-        if link_data.link_type == LinkTypes.WIRELESS.value:
+        if link_data.link_type == LinkTypes.WIRELESS:
             self.updatelink(link_data.node1_id, link_data.node2_id, link_data.message_type, wireless=True)
 
     def is_enabled(self):
@@ -144,7 +144,7 @@ class Sdt(object):
             return False
         if self.connected:
             return True
-        if self.session.state == EventTypes.SHUTDOWN_STATE.value:
+        if self.session.state == EventTypes.SHUTDOWN_STATE:
             return False
 
         self.seturl()
@@ -330,31 +330,31 @@ class Sdt(object):
                 (x, y, z) = node.getposition()
                 if x is None or y is None:
                     continue
-                self.updatenode(node.id, MessageFlags.ADD.value, x, y, z, node.name, node.type, node.icon)
+                self.updatenode(node.id, MessageFlags.ADD, x, y, z, node.name, node.type, node.icon)
             for nodenum in sorted(self.remotes.keys()):
                 r = self.remotes[nodenum]
                 x, y, z = r.pos
-                self.updatenode(nodenum, MessageFlags.ADD.value, x, y, z, r.name, r.type, r.icon)
+                self.updatenode(nodenum, MessageFlags.ADD, x, y, z, r.name, r.type, r.icon)
 
             for net in nets:
-                all_links = net.all_link_data(flags=MessageFlags.ADD.value)
+                all_links = net.all_link_data(flags=MessageFlags.ADD)
                 for link_data in all_links:
                     is_wireless = nodeutils.is_node(net, (NodeTypes.WIRELESS_LAN, NodeTypes.EMANE))
-                    wireless_link = link_data.message_type == LinkTypes.WIRELESS.value
+                    wireless_link = link_data.message_type == LinkTypes.WIRELESS
                     if is_wireless and link_data.node1_id == net.id:
                         continue
 
                     self.updatelink(
                         link_data.node1_id,
                         link_data.node2_id,
-                        MessageFlags.ADD.value,
+                        MessageFlags.ADD,
                         wireless_link
                     )
 
             for n1num in sorted(self.remotes.keys()):
                 r = self.remotes[n1num]
                 for n2num, wireless_link in r.links:
-                    self.updatelink(n1num, n2num, MessageFlags.ADD.value, wireless_link)
+                    self.updatelink(n1num, n2num, MessageFlags.ADD, wireless_link)
 
     def handle_distributed(self, message):
         """
@@ -365,9 +365,9 @@ class Sdt(object):
         :param message: message to handle
         :return: replies
         """
-        if message.message_type == MessageTypes.LINK.value:
+        if message.message_type == MessageTypes.LINK:
             return self.handlelinkmsg(message)
-        elif message.message_type == MessageTypes.NODE.value:
+        elif message.message_type == MessageTypes.NODE:
             return self.handlenodemsg(message)
 
     def handlenodemsg(self, msg):
@@ -384,21 +384,21 @@ class Sdt(object):
         if not self.is_enabled():
             return False
         # node.(_id, type, icon, name) are used.
-        nodenum = msg.get_tlv(NodeTlvs.NUMBER.value)
+        nodenum = msg.get_tlv(NodeTlvs.NUMBER)
         if not nodenum:
             return
-        x = msg.get_tlv(NodeTlvs.X_POSITION.value)
-        y = msg.get_tlv(NodeTlvs.Y_POSITION.value)
+        x = msg.get_tlv(NodeTlvs.X_POSITION)
+        y = msg.get_tlv(NodeTlvs.Y_POSITION)
         z = None
-        name = msg.get_tlv(NodeTlvs.NAME.value)
+        name = msg.get_tlv(NodeTlvs.NAME)
 
-        nodetype = msg.get_tlv(NodeTlvs.TYPE.value)
-        model = msg.get_tlv(NodeTlvs.MODEL.value)
-        icon = msg.get_tlv(NodeTlvs.ICON.value)
+        nodetype = msg.get_tlv(NodeTlvs.TYPE)
+        model = msg.get_tlv(NodeTlvs.MODEL)
+        icon = msg.get_tlv(NodeTlvs.ICON)
 
         net = False
-        if nodetype == NodeTypes.DEFAULT.value or \
-                nodetype == NodeTypes.PHYSICAL.value:
+        if nodetype == NodeTypes.DEFAULT or \
+                nodetype == NodeTypes.PHYSICAL:
             if model is None:
                 model = "router"
             nodetype = model
@@ -440,13 +440,13 @@ class Sdt(object):
         """
         if not self.is_enabled():
             return False
-        nodenum1 = msg.get_tlv(LinkTlvs.N1_NUMBER.value)
-        nodenum2 = msg.get_tlv(LinkTlvs.N2_NUMBER.value)
-        link_msg_type = msg.get_tlv(LinkTlvs.TYPE.value)
+        nodenum1 = msg.get_tlv(LinkTlvs.N1_NUMBER)
+        nodenum2 = msg.get_tlv(LinkTlvs.N2_NUMBER)
+        link_msg_type = msg.get_tlv(LinkTlvs.TYPE)
         # this filters out links to WLAN and EMANE nodes which are not drawn
         if self.wlancheck(nodenum1):
             return
-        wl = link_msg_type == LinkTypes.WIRELESS.value
+        wl = link_msg_type == LinkTypes.WIRELESS
         if nodenum1 in self.remotes:
             r = self.remotes[nodenum1]
             if msg.flags & MessageFlags.DELETE.value:

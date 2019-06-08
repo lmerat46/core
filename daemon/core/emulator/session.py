@@ -236,8 +236,7 @@ class Session(object):
                 if all([node_one, node_two]) and not net_one:
                     logging.info("adding link for peer to peer nodes: %s - %s", node_one.name, node_two.name)
                     ptp_class = nodeutils.get_node_class(NodeTypes.PEER_TO_PEER)
-                    # TODO: can this be done without the values?
-                    start = self.state.value > EventTypes.DEFINITION_STATE.value
+                    start = self.state is not EventTypes.DEFINITION_STATE
                     net_one = self.create_node(cls=ptp_class, start=start)
 
                 # node to network
@@ -390,7 +389,7 @@ class Session(object):
 
         try:
             # wireless link
-            if link_options.type == LinkTypes.WIRELESS.value:
+            if link_options.type == LinkTypes.WIRELESS:
                 raise ValueError("cannot update wireless link")
             else:
                 if not node_one and not node_two:
@@ -467,7 +466,7 @@ class Session(object):
             return None
 
         # set node start based on current session state, override and check when rj45
-        start = self.state.value > EventTypes.DEFINITION_STATE.value
+        start = self.state is not EventTypes.DEFINITION_STATE
         enable_rj45 = self.options.get_config("enablerj45") == "1"
         if _type == NodeTypes.RJ45 and not enable_rj45:
             start = False
@@ -842,8 +841,7 @@ class Session(object):
         self.run_state_hooks(state)
 
         if send_event:
-            # TODO: left this as value, not sure where it is going
-            event_data = EventData(event_type=state.value, time="%s" % time.time())
+            event_data = EventData(event_type=state, time="%s" % time.time())
             self.broadcast_event(event_data)
 
     def write_state(self, state):
@@ -1208,7 +1206,7 @@ class Session(object):
         of various managers and boot the nodes. Validate nodes and check
         for transition to the runtime state.
         """
-
+        logging.warning("instantiating session")
         # write current nodes out to session directory file
         self.write_nodes()
 
@@ -1216,6 +1214,7 @@ class Session(object):
         self.add_remove_control_interface(node=None, remove=False)
 
         # instantiate will be invoked again upon Emane configure
+        logging.warning("about to start emane")
         if self.emane.startup() == self.emane.NOT_READY:
             return
 
@@ -1230,7 +1229,7 @@ class Session(object):
         self.broker.local_instantiation_complete()
 
         # notify listeners that instantiation is complete
-        event = EventData(event_type=EventTypes.INSTANTIATION_COMPLETE.value)
+        event = EventData(event_type=EventTypes.INSTANTIATION_COMPLETE)
         self.broadcast_event(event)
 
         # assume either all nodes have booted already, or there are some

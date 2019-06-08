@@ -112,8 +112,8 @@ class CoreNs3Net(CoreNetworkBase):
     entirely in simulation with the TunTap device bridging the emulated and
     simulated worlds.
     """
-    apitype = NodeTypes.WIRELESS_LAN.value
-    linktype = LinkTypes.WIRELESS.value
+    apitype = NodeTypes.WIRELESS_LAN
+    linktype = LinkTypes.WIRELESS
     # icon used
     type = "wlan"
 
@@ -466,8 +466,8 @@ class Ns3Session(Session):
         their ns-3 positions.
         """
         valid_states = (
-            EventTypes.RUNTIME_STATE.value,
-            EventTypes.INSTANTIATION_STATE.value
+            EventTypes.RUNTIME_STATE,
+            EventTypes.INSTANTIATION_STATE
         )
         while self.state in valid_states:
             for i in xrange(self.nodes.GetN()):
@@ -518,7 +518,7 @@ class Ns3Session(Session):
             sleep = 0.001
             kickstart = True
             while True:
-                if self.state != EventTypes.RUNTIME_STATE.value:
+                if self.state != EventTypes.RUNTIME_STATE:
                     break
                 line = f.readline()
                 if not line:

@@ -90,7 +90,7 @@ class CoreBroker(object):
     name = "broker"
 
     # configurable manager type
-    config_type = RegisterTlvs.UTILITY.value
+    config_type = RegisterTlvs.UTILITY
 
     def __init__(self, session):
         """
@@ -245,24 +245,26 @@ class CoreBroker(object):
         count = None
         logging.debug("received message type: %s", MessageTypes(msgtype))
         # snoop exec response for remote interactive TTYs
-        if msgtype == MessageTypes.EXECUTE.value and msgflags & MessageFlags.TTY.value:
+        if msgtype == MessageTypes.EXECUTE and msgflags & MessageFlags.TTY:
             data = self.fixupremotetty(msghdr, msgdata, server.host)
             logging.debug("created remote tty message: %s", data)
-        elif msgtype == MessageTypes.NODE.value:
+        elif msgtype == MessageTypes.NODE:
             # snoop node delete response to decrement node counts
+            # TODO Re-examine in later value-s pass
             if msgflags & MessageFlags.DELETE.value:
                 msg = coreapi.CoreNodeMessage(msgflags, msghdr, msgdata)
-                nodenum = msg.get_tlv(NodeTlvs.NUMBER.value)
+                nodenum = msg.get_tlv(NodeTlvs.NUMBER)
                 if nodenum is not None:
                     count = self.delnodemap(server, nodenum)
-        elif msgtype == MessageTypes.LINK.value:
+        elif msgtype == MessageTypes.LINK:
             # this allows green link lines for remote WLANs
             msg = coreapi.CoreLinkMessage(msgflags, msghdr, msgdata)
             self.session.sdt.handle_distributed(msg)
-        elif msgtype == MessageTypes.EVENT.value:
+        elif msgtype == MessageTypes.EVENT:
             msg = coreapi.CoreEventMessage(msgflags, msghdr, msgdata)
-            eventtype = msg.get_tlv(EventTlvs.TYPE.value)
-            if eventtype == EventTypes.INSTANTIATION_COMPLETE.value:
+            # TODO: re-examine this in later pass
+            eventtype = msg.get_tlv(EventTlvs.TYPE)
+            if eventtype == EventTypes.INSTANTIATION_COMPLETE:
                 server.instantiation_complete = True
                 if self.instantiation_complete():
                     self.session.check_runtime()
@@ -630,26 +632,26 @@ class CoreBroker(object):
         handle_locally = False
         # Do not forward messages when in definition state
         # (for e.g. configuring services)
-        if self.session.state == EventTypes.DEFINITION_STATE.value:
+        if self.session.state == EventTypes.DEFINITION_STATE:
             return False
 
         # Decide whether message should be handled locally or forwarded, or both
-        if message.message_type == MessageTypes.NODE.value:
+        if message.message_type == MessageTypes.NODE:
             handle_locally, servers = self.handlenodemsg(message)
-        elif message.message_type == MessageTypes.EVENT.value:
+        elif message.message_type == MessageTypes.EVENT:
             # broadcast events everywhere
             servers = self.getservers()
-        elif message.message_type == MessageTypes.CONFIG.value:
+        elif message.message_type == MessageTypes.CONFIG:
             # broadcast location and services configuration everywhere
-            confobj = message.get_tlv(ConfigTlvs.OBJECT.value)
+            confobj = message.get_tlv(ConfigTlvs.OBJECT)
             if confobj == "location" or confobj == "services" or confobj == "session" or confobj == "all":
                 servers = self.getservers()
-        elif message.message_type == MessageTypes.FILE.value:
+        elif message.message_type == MessageTypes.FILE:
             # broadcast hook scripts and custom service files everywhere
-            filetype = message.get_tlv(FileTlvs.TYPE.value)
+            filetype = message.get_tlv(FileTlvs.TYPE)
             if filetype is not None and (filetype[:5] == "hook:" or filetype[:8] == "service:"):
                 servers = self.getservers()
-        if message.message_type == MessageTypes.LINK.value:
+        if message.message_type == MessageTypes.LINK:
             # prepare a server list from two node numbers in link message
             handle_locally, servers, message = self.handlelinkmsg(message)
         elif len(servers) == 0:
@@ -717,10 +719,10 @@ class CoreBroker(object):
         msgcls = coreapi.CLASS_MAP[msgtype]
         msg = msgcls(msgflags, msghdr, msgdata)
 
-        nodenum = msg.get_tlv(ExecuteTlvs.NODE.value)
-        execnum = msg.get_tlv(ExecuteTlvs.NUMBER.value)
-        cmd = msg.get_tlv(ExecuteTlvs.COMMAND.value)
-        res = msg.get_tlv(ExecuteTlvs.RESULT.value)
+        nodenum = msg.get_tlv(ExecuteTlvs.NODE)
+        execnum = msg.get_tlv(ExecuteTlvs.NUMBER)
+        cmd = msg.get_tlv(ExecuteTlvs.COMMAND)
+        res = msg.get_tlv(ExecuteTlvs.RESULT)
 
         tlvdata = b""
         tlvdata += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, nodenum)
@@ -749,7 +751,7 @@ class CoreBroker(object):
         n = message.tlv_data[NodeTlvs.NUMBER.value]
 
         # replicate link-layer nodes on all servers
-        nodetype = message.get_tlv(NodeTlvs.TYPE.value)
+        nodetype = message.get_tlv(NodeTlvs.TYPE)
         if nodetype is not None:
             try:
                 nodecls = nodeutils.get_node_class(NodeTypes(nodetype))
@@ -759,7 +761,7 @@ class CoreBroker(object):
             if nodecls is None:
                 logging.warning("broker unimplemented node type %s", nodetype)
                 return handle_locally, servers
-            if issubclass(nodecls, CoreNetworkBase) and nodetype != NodeTypes.WIRELESS_LAN.value:
+            if issubclass(nodecls, CoreNetworkBase) and nodetype != NodeTypes.WIRELESS_LAN:
                 # network node replicated on all servers; could be optimized
                 # don"t replicate WLANs, because ebtables rules won"t work
                 servers = self.getservers()
@@ -771,7 +773,7 @@ class CoreBroker(object):
                 # nodes are replicated across all server
                 return handle_locally, servers
             elif issubclass(nodecls, CoreNodeBase):
-                name = message.get_tlv(NodeTlvs.NAME.value)
+                name = message.get_tlv(NodeTlvs.NAME)
                 if name:
                     serverfiletxt = "%s %s %s" % (n, name, nodecls)
                 if issubclass(nodecls, PhysicalNode):
@@ -779,7 +781,7 @@ class CoreBroker(object):
                     self.addphys(n)
 
         # emulation server TLV specifies server
-        servername = message.get_tlv(NodeTlvs.EMULATION_SERVER.value)
+        servername = message.get_tlv(NodeTlvs.EMULATION_SERVER)
         server = self.getserverbyname(servername)
         if server is not None:
             self.addnodemap(server, n)
@@ -907,7 +909,7 @@ class CoreBroker(object):
         :rtype: str
         """
         host = None
-        opaque = msg.get_tlv(LinkTlvs.OPAQUE.value)
+        opaque = msg.get_tlv(LinkTlvs.OPAQUE)
         if opaque is not None:
             if first_is_local:
                 host = opaque.split(":")[1]
@@ -1062,10 +1064,10 @@ class CoreBroker(object):
         if not self.session.master:
             return
 
-        if message.message_type != MessageTypes.CONFIG.value or message.get_tlv(ConfigTlvs.OBJECT.value) != "session":
+        if message.message_type != MessageTypes.CONFIG or message.get_tlv(ConfigTlvs.OBJECT) != "session":
             return
 
-        values_str = message.get_tlv(ConfigTlvs.VALUES.value)
+        values_str = message.get_tlv(ConfigTlvs.VALUES)
         if values_str is None:
             return
 

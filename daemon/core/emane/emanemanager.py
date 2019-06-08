@@ -103,6 +103,7 @@ class EmaneManager(ModelManager):
         :return: node/interface model configuration
         :rtype: dict
         """
+        logging.warning("runnign getifconfig with node_id: %s, interface: %s, model_name: %s", node_id, interface, model_name)
         # use the network-wide config values or interface(NEM)-specific values?
         if interface is None:
             return self.get_configs(node_id=node_id, config_type=model_name)
@@ -156,6 +157,7 @@ class EmaneManager(ModelManager):
             custom_models_path = self.session.options.get_config("emane_models_dir")
             if custom_models_path:
                 emane_models = utils.load_classes(custom_models_path, EmaneModel)
+                logging.warning("loading emane_models: %s", emane_models)
                 self.load_models(emane_models)
         except CoreCommandError:
             logging.info("emane is not installed")
@@ -211,6 +213,7 @@ class EmaneManager(ModelManager):
         Load EMANE models and make them available.
         """
         for emane_model in emane_models:
+            logging.warning("loadking model: %s", emane_model)
             logging.info("loading emane model: %s", emane_model.__name__)
             emane_prefix = self.session.options.get_config("emane_prefix", default=DEFAULT_EMANE_PREFIX)
             emane_model.load(emane_prefix)
@@ -294,6 +297,7 @@ class EmaneManager(ModelManager):
             if value == default_values[platform_id_start]:
                 return EmaneManager.NOT_READY
 
+        logging.warning("checking node models")
         self.check_node_models()
         return EmaneManager.SUCCESS
 
@@ -303,6 +307,7 @@ class EmaneManager(ModelManager):
         and start the daemons. Returns Emane.(SUCCESS, NOT_NEEDED, or
         NOT_READY) which is used to delay session instantiation.
         """
+        logging.warning("starting up emane")
         self.reset()
         r = self.setup()
 
@@ -312,6 +317,7 @@ class EmaneManager(ModelManager):
 
         nems = []
         with self._emane_node_lock:
+            logging.warning("building emane xml")
             self.buildxml()
             self.initeventservice()
             self.starteventmonitor()
@@ -334,6 +340,7 @@ class EmaneManager(ModelManager):
             except IOError:
                 logging.exception("Error writing EMANE NEMs file: %s")
 
+        logging.warning("finishing emane startup")
         return EmaneManager.SUCCESS
 
     def poststartup(self):
@@ -346,7 +353,7 @@ class EmaneManager(ModelManager):
         with self._emane_node_lock:
             for key in sorted(self._emane_nodes.keys()):
                 emane_node = self._emane_nodes[key]
-                logging.debug("post startup for emane node: %s - %s", emane_node.id, emane_node.name)
+                logging.warning("post startup for emane node: %s - %s, model: %s", emane_node.id, emane_node.name, emane_node.model)
                 emane_node.model.post_startup()
                 for netif in emane_node.netifs():
                     x, y, z = netif.node.position.get()
@@ -387,8 +394,7 @@ class EmaneManager(ModelManager):
         received. This is used to snoop the Link add messages to get NEM
         counts of NEMs that exist on other servers.
         """
-        # TODO: come back to this
-        if message.message_type == MessageTypes.LINK.value and message.flags & MessageFlags.ADD.value:
+        if message.message_type == MessageTypes.LINK and message.flags & MessageFlags.ADD:
             nn = message.node_numbers()
             # first node is always link layer node in Link add message
             if nn[0] in self.session.broker.network_nodes:
@@ -519,11 +525,11 @@ class EmaneManager(ModelManager):
         """
         for node_id in self._emane_nodes:
             emane_node = self._emane_nodes[node_id]
-            logging.debug("checking emane model for node: %s", node_id)
+            logging.warning("checking emane model for node: %s", node_id)
 
             # skip nodes that already have a model set
             if emane_node.model:
-                logging.debug("node(%s) already has model(%s)", emane_node.id, emane_node.model.name)
+                logging.warning("node(%s) already has model(%s)", emane_node.id, emane_node.model.name)
                 continue
 
             # set model configured for node, due to legacy messaging configuration before nodes exist
@@ -533,7 +539,7 @@ class EmaneManager(ModelManager):
                 raise ValueError("emane node has no model set")
 
             config = self.get_model_config(node_id=node_id, model_name=model_name)
-            logging.debug("setting emane model(%s) config(%s)", model_name, config)
+            logging.warning("setting emane model(%s) config(%s)", model_name, config)
             model_class = self.models[model_name]
             emane_node.setmodel(model_class, config)
 
@@ -569,12 +575,14 @@ class EmaneManager(ModelManager):
         """
         Build a platform.xml file now that all nodes are configured.
         """
+        logging.warning("building platform xml with ctrlnet %s", ctrlnet)
         nemid = int(self.get_config("nem_id_start"))
         platform_xmls = {}
 
         # assume self._objslock is already held here
         for key in sorted(self._emane_nodes.keys()):
             emane_node = self._emane_nodes[key]
+            logging.warning("trying to build with emane_node: %s, emane_node.model: %s, nemid, %s, platform_xmls: %s", emane_node, emane_node.model, nemid, platform_xmls)
             nemid = emanexml.build_node_platform_xml(self, ctrlnet, emane_node, nemid, platform_xmls)
 
     def buildnemxml(self):
@@ -582,8 +590,10 @@ class EmaneManager(ModelManager):
         Builds the xxxnem.xml, xxxmac.xml, and xxxphy.xml files which
         are defined on a per-EmaneNode basis.
         """
+        logging.warning("running emanexml's buildnemxml")
         for key in sorted(self._emane_nodes.keys()):
             emane_node = self._emane_nodes[key]
+            logging.warning("building xml for emane_node %s", emane_node)
             emanexml.build_xml_files(self, emane_node)
 
     def buildtransportxml(self):

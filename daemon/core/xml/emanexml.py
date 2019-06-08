@@ -209,7 +209,7 @@ def build_xml_files(emane_manager, node):
     :param core.emane.nodes.EmaneNode node: node to write platform xml for
     :return: nothing
     """
-    logging.debug("building all emane xml for node(%s): %s", node, node.name)
+    logging.warning("building all emane xml for node(%s): %s, model: %s", node, node.name, node.model)
     if node.model is None:
         return
 

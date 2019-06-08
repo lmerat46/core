@@ -20,10 +20,10 @@ def main():
 
     if options.list is True:
         num = '0'
-        flags = MessageFlags.STRING.value
+        flags = MessageFlags.STRING
     else:
         num = args[0]
-        flags = MessageFlags.DELETE.value
+        flags = MessageFlags.DELETE
     tlvdata = coreapi.CoreSessionTlv.pack(SessionTlvs.NUMBER.value, num)
     message = coreapi.CoreSessionMessage.pack(flags, tlvdata)
 
@@ -39,7 +39,7 @@ def main():
         if msglen:
             data = sock.recv(msglen)
         message = coreapi.CoreMessage(msgflags, hdr, data)
-        sessions = message.get_tlv(coreapi.SessionTlvs.NUMBER.value)
+        sessions = message.get_tlv(coreapi.SessionTlvs.NUMBER)
         print("sessions: {}".format(sessions))
 
     sock.close()

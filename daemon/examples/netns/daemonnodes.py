@@ -66,9 +66,9 @@ def cmd(node, exec_cmd):
 
         # If we get the right response return the results
         print("received response message: %s" % MessageTypes(msgtype))
-        if msgtype == MessageTypes.EXECUTE.value:
+        if msgtype == MessageTypes.EXECUTE:
             msg = coreapi.CoreExecMessage(msgflags, msghdr, msgdata)
-            result = msg.get_tlv(ExecuteTlvs.RESULT.value)
+            result = msg.get_tlv(ExecuteTlvs.RESULT)
             break
 
     return result
@@ -135,7 +135,7 @@ def main():
     tlvdata = coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, EventTypes.CONFIGURATION_STATE.value)
     session.broker.handlerawmsg(coreapi.CoreEventMessage.pack(0, tlvdata))
 
-    flags = MessageFlags.ADD.value
+    flags = MessageFlags.ADD
     switch = core.nodes.network.SwitchNode(session=session, name="switch", start=False)
     switch.setposition(x=80, y=50)
     switch.server = daemon

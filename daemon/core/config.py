@@ -187,9 +187,10 @@ class ConfigurableManager(object):
         :param str config_type: configuration type to store configuration for
         :return: nothing
         """
-        logging.debug("setting config for node(%s) type(%s): %s", node_id, config_type, config)
+        logging.warning("setting config for node(%s) type(%s): %s", node_id, config_type, config)
         node_configs = self.node_configurations.setdefault(node_id, OrderedDict())
         node_configs[config_type] = config
+        logging.warning("node_configs: %s", node_configs)
 
     def get_config(self, _id, node_id=_default_node, config_type=_default_type, default=None):
         """
@@ -315,6 +316,7 @@ class ModelManager(ConfigurableManager):
         :param dict config: configuration data to set for model
         :return: nothing
         """
+        logging.warning("setting model config: node_id: %s, model_name: %s, config: %s", node_id, model_name, config)
         # get model class to configure
         model_class = self.models.get(model_name)
         if not model_class:
