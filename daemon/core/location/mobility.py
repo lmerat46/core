@@ -208,7 +208,7 @@ class MobilityManager(ModelManager):
         :param message: link message to handle
         :return: nothing
         """
-        if message.message_type == MessageTypes.LINK and message.flags & MessageFlags.ADD:
+        if message.message_type == MessageTypes.LINK and message.flags & MessageFlags.ADD.value:
             nn = message.node_numbers()
             # first node is always link layer node in Link add message
             if nn[0] not in self.session.broker.network_nodes:

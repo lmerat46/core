@@ -388,7 +388,7 @@ class EmaneManager(ModelManager):
         received. This is used to snoop the Link add messages to get NEM
         counts of NEMs that exist on other servers.
         """
-        if message.message_type == MessageTypes.LINK and message.flags & MessageFlags.ADD:
+        if message.message_type == MessageTypes.LINK and message.flags & MessageFlags.ADD.value:
             nn = message.node_numbers()
             # first node is always link layer node in Link add message
             if nn[0] in self.session.broker.network_nodes:

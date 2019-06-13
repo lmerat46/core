@@ -362,7 +362,7 @@ class CoreTlv(object):
         :param tlv_data: data to unpack
         :return: unpacked data
         """
-        self.tlv_type = tlv_type
+        self.tlv_type = self.tlv_type_map(tlv_type)
         if tlv_data:
             try:
                 self.value = self.tlv_data_class_map[self.tlv_type].unpack(tlv_data)

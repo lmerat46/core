@@ -39,7 +39,7 @@ class TestXml:
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
-        runtime_hooks = session._hooks.get(4)
+        runtime_hooks = session._hooks.get(EventTypes.RUNTIME_STATE)
         assert runtime_hooks
         runtime_hook = runtime_hooks[0]
         assert file_name == runtime_hook[0]

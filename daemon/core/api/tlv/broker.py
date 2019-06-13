@@ -748,7 +748,7 @@ class CoreBroker(object):
         serverfiletxt = None
 
         # snoop Node Message for emulation server TLV and record mapping
-        n = message.tlv_data[NodeTlvs.NUMBER.value]
+        n = message.tlv_data[NodeTlvs.NUMBER]
 
         # replicate link-layer nodes on all servers
         nodetype = message.get_tlv(NodeTlvs.TYPE)
@@ -808,7 +808,6 @@ class CoreBroker(object):
         """
         servers = set()
         handle_locally = False
-        import pdb;pdb.set_trace()
         # determine link message destination using non-network nodes
         nn = message.node_numbers()
         logging.debug("checking link nodes (%s) with network nodes (%s)", nn, self.network_nodes)

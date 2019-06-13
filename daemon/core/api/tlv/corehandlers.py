@@ -628,7 +628,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :return: replies to node message
         """
         replies = []
-        if message.flags.value & MessageFlags.ADD.value and message.flags.value & MessageFlags.DELETE.value:
+        if message.flags & MessageFlags.ADD.value and message.flags & MessageFlags.DELETE.value:
             logging.warning("ignoring invalid message: add and delete flag both set")
             return ()
 
@@ -743,9 +743,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
         link_options.key = message.get_tlv(LinkTlvs.KEY)
         link_options.opaque = message.get_tlv(LinkTlvs.OPAQUE)
 
-        if message.flags.value & MessageFlags.ADD.value:
+        if message.flags & MessageFlags.ADD.value:
             self.session.add_link(node_one_id, node_two_id, interface_one, interface_two, link_options)
-        elif message.flags.value & MessageFlags.DELETE.value:
+        elif message.flags & MessageFlags.DELETE.value:
             self.session.delete_link(node_one_id, node_two_id, interface_one.id, interface_two.id)
         else:
             self.session.update_link(node_one_id, node_two_id, interface_one.id, interface_two.id, link_options)
@@ -821,7 +821,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             logging.exception("error getting object: %s", node_num)
             # XXX wait and queue this message to try again later
             # XXX maybe this should be done differently
-            if not message.flags.value & MessageFlags.LOCAL.value:
+            if not message.flags & MessageFlags.LOCAL.value:
                 time.sleep(0.125)
                 self.queue_message(message)
 
