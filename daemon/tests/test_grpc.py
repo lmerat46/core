@@ -11,7 +11,7 @@ from core.config import ConfigShim
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.data import EventData
 from core.emulator.emudata import NodeOptions
-from core.emulator.enumerations import NodeTypes, EventTypes, ConfigFlags, ExceptionLevels
+from core.emulator.enumerations import NodeTypes, EventTypes, ConfigFlags, ExceptionLevels, MessageFlags
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 
 
@@ -30,7 +30,7 @@ class TestGrpc:
         assert isinstance(response.state, int)
         session = grpc_server.coreemu.sessions.get(response.session_id)
         assert session is not None
-        assert session.state == response.state
+        assert session.state.value == response.state
         if session_id is not None:
             assert response.session_id == session_id
             assert session.id == session_id
@@ -169,7 +169,7 @@ class TestGrpc:
 
         # then
         assert response.result is True
-        assert session.state == core_pb2.SessionState.DEFINITION
+        assert session.state.value == core_pb2.SessionState.DEFINITION
 
     def test_add_node(self, grpc_server):
         # given
@@ -280,7 +280,7 @@ class TestGrpc:
         session = grpc_server.coreemu.create_session()
         file_name = "test"
         file_data = "echo hello"
-        session.add_hook(EventTypes.RUNTIME_STATE.value, file_name, None, file_data)
+        session.add_hook(EventTypes.RUNTIME_STATE, file_name, file_data)
 
         # then
         with client.context_connect():
@@ -820,7 +820,7 @@ class TestGrpc:
         with client.context_connect():
             client.events(session.id, handle_event)
             time.sleep(0.1)
-            event = EventData(event_type=EventTypes.RUNTIME_STATE.value, time="%s" % time.time())
+            event = EventData(event_type=EventTypes.RUNTIME_STATE, time="%s" % time.time())
             session.broadcast_event(event)
 
             # then
@@ -841,7 +841,7 @@ class TestGrpc:
             client.events(session.id, handle_event)
             time.sleep(0.1)
             session_config = session.options.get_configs()
-            config_data = ConfigShim.config_data(0, None, ConfigFlags.UPDATE.value, session.options, session_config)
+            config_data = ConfigShim.config_data(MessageFlags.NONE, None, ConfigFlags.UPDATE, session.options, session_config)
             session.broadcast_config(config_data)
 
             # then

@@ -51,7 +51,7 @@ def node_message(_id, name, emulation_server=None, node_type=NodeTypes.DEFAULT, 
     """
     values = [
         (NodeTlvs.NUMBER, _id),
-        (NodeTlvs.TYPE, node_type.value),
+        (NodeTlvs.TYPE, node_type),
         (NodeTlvs.NAME, name),
         (NodeTlvs.EMULATION_SERVER, emulation_server),
     ]
@@ -59,7 +59,7 @@ def node_message(_id, name, emulation_server=None, node_type=NodeTypes.DEFAULT, 
     if model:
         values.append((NodeTlvs.MODEL, model))
 
-    return CoreNodeMessage.create(MessageFlags.ADD.value, values)
+    return CoreNodeMessage.create(MessageFlags.ADD, values)
 
 
 def link_message(n1, n2, intf_one=None, address_one=None, intf_two=None, address_two=None, key=None):
@@ -90,7 +90,7 @@ def link_message(n1, n2, intf_one=None, address_one=None, intf_two=None, address
         (LinkTlvs.PER, "0"),
         (LinkTlvs.DUP, "0"),
         (LinkTlvs.JITTER, 0),
-        (LinkTlvs.TYPE, LinkTypes.WIRED.value),
+        (LinkTlvs.TYPE, LinkTypes.WIRED),
         (LinkTlvs.INTERFACE1_NUMBER, intf_one),
         (LinkTlvs.INTERFACE1_IP4, address_one),
         (LinkTlvs.INTERFACE1_IP4_MASK, 24),
@@ -104,7 +104,7 @@ def link_message(n1, n2, intf_one=None, address_one=None, intf_two=None, address
     if key:
         values.append((LinkTlvs.KEY, key))
 
-    return CoreLinkMessage.create(MessageFlags.ADD.value, values)
+    return CoreLinkMessage.create(MessageFlags.ADD, values)
 
 
 def command_message(node, command):
@@ -116,6 +116,7 @@ def command_message(node, command):
     :return: tlv message
     :rtype: core.api.coreapi.CoreExecMessage
     """
+    # TODO: see if python can overload this operator
     flags = MessageFlags.STRING.value | MessageFlags.TEXT.value
     return CoreExecMessage.create(flags, [
         (ExecuteTlvs.NODE, node.id),
@@ -133,7 +134,7 @@ def state_message(state):
     :rtype: core.api.coreapi.CoreEventMessage
     """
     return CoreEventMessage.create(0, [
-        (EventTlvs.TYPE, state.value)
+        (EventTlvs.TYPE, state)
     ])
 
 

@@ -72,7 +72,7 @@ def main():
     session.broker.addserver(slave, slave, port)
     session.broker.setupserver(slave)
     session.set_state(EventTypes.CONFIGURATION_STATE)
-    tlvdata = coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, EventTypes.CONFIGURATION_STATE.value)
+    tlvdata = coreapi.CoreEventTlv.pack(EventTlvs.TYPE, EventTypes.CONFIGURATION_STATE.value)
     session.broker.handlerawmsg(coreapi.CoreEventMessage.pack(0, tlvdata))
 
     switch = session.create_node(cls=core.nodes.network.SwitchNode, name="switch")
@@ -103,17 +103,17 @@ def main():
 
     # create remote links via API
     for i in range(num_local + 1, options.numnodes + 1):
-        tlvdata = coreapi.CoreLinkTlv.pack(LinkTlvs.N1_NUMBER.value, switch.id)
-        tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.N2_NUMBER.value, i)
-        tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.TYPE.value, LinkTypes.WIRED.value)
-        tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_NUMBER.value, 0)
-        tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_IP4.value, prefix.addr(i))
-        tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_IP4_MASK.value, prefix.prefixlen)
+        tlvdata = coreapi.CoreLinkTlv.pack(LinkTlvs.N1_NUMBER, switch.id)
+        tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.N2_NUMBER, i)
+        tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.TYPE, LinkTypes.WIRED.value)
+        tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_NUMBER, 0)
+        tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_IP4, prefix.addr(i))
+        tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_IP4_MASK, prefix.prefixlen)
         msg = coreapi.CoreLinkMessage.pack(flags, tlvdata)
         session.broker.handlerawmsg(msg)
 
     session.instantiate()
-    tlvdata = coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, EventTypes.INSTANTIATION_STATE.value)
+    tlvdata = coreapi.CoreEventTlv.pack(EventTlvs.TYPE, EventTypes.INSTANTIATION_STATE.value)
     msg = coreapi.CoreEventMessage.pack(0, tlvdata)
     session.broker.handlerawmsg(msg)
 

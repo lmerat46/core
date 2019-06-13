@@ -434,7 +434,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 raise IOError(error_message)
 
         try:
-            message_class = coreapi.CLASS_MAP[message_type]
+            message_class = coreapi.CLASS_MAP[MessageTypes(int(message_type))]
             message = message_class(message_flags, header, data)
         except KeyError:
             message = coreapi.CoreMessage(message_flags, header, data)
@@ -596,7 +596,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             session=str(self.session.id),
             node=node,
             date=time.ctime(),
-            level=level.value,
+            level=level,
             source=source,
             text=text
         )
@@ -628,7 +628,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :return: replies to node message
         """
         replies = []
-        if message.flags & MessageFlags.ADD.value and message.flags & MessageFlags.DELETE.value:
+        if message.flags.value & MessageFlags.ADD.value and message.flags.value & MessageFlags.DELETE.value:
             logging.warning("ignoring invalid message: add and delete flag both set")
             return ()
 
@@ -668,20 +668,20 @@ class CoreHandler(socketserver.BaseRequestHandler):
         if services:
             node_options.services = services.split("|")
 
-        if message.flags & MessageFlags.ADD.value:
+        if message.flags.value & MessageFlags.ADD.value:
             node = self.session.add_node(node_type, node_id, node_options)
             if node:
-                if message.flags & MessageFlags.STRING.value:
+                if message.flags.value & MessageFlags.STRING.value:
                     self.node_status_request[node.id] = True
 
-                if self.session.state == EventTypes.RUNTIME_STATE.value:
+                if self.session.state == EventTypes.RUNTIME_STATE:
                     self.send_node_emulation_id(node.id)
-        elif message.flags & MessageFlags.DELETE.value:
+        elif message.flags.value & MessageFlags.DELETE.value:
             with self._shutdown_lock:
                 result = self.session.delete_node(node_id)
 
                 # if we deleted a node broadcast out its removal
-                if result and message.flags & MessageFlags.STRING.value:
+                if result and message.flags.value & MessageFlags.STRING.value:
                     tlvdata = b""
                     tlvdata += coreapi.CoreNodeTlv.pack(NodeTlvs.NUMBER.value, node_id)
                     flags = MessageFlags.DELETE.value | MessageFlags.LOCAL.value
@@ -743,9 +743,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
         link_options.key = message.get_tlv(LinkTlvs.KEY)
         link_options.opaque = message.get_tlv(LinkTlvs.OPAQUE)
 
-        if message.flags & MessageFlags.ADD.value:
+        if message.flags.value & MessageFlags.ADD.value:
             self.session.add_link(node_one_id, node_two_id, interface_one, interface_two, link_options)
-        elif message.flags & MessageFlags.DELETE.value:
+        elif message.flags.value & MessageFlags.DELETE.value:
             self.session.delete_link(node_one_id, node_two_id, interface_one.id, interface_two.id)
         else:
             self.session.update_link(node_one_id, node_two_id, interface_one.id, interface_two.id, link_options)
@@ -765,7 +765,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         command = message.get_tlv(ExecuteTlvs.COMMAND)
 
         # local flag indicates command executed locally, not on a node
-        if node_num is None and not message.flags & MessageFlags.LOCAL.value:
+        if node_num is None and not message.flags.value & MessageFlags.LOCAL.value:
             raise ValueError("Execute Message is missing node number.")
 
         if execute_num is None:
@@ -785,7 +785,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.NUMBER.value, execute_num)
             tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.COMMAND.value, command)
 
-            if message.flags & MessageFlags.TTY.value:
+            if message.flags.value & MessageFlags.TTY.value:
                 if node_num is None:
                     raise NotImplementedError
                 # echo back exec message with cmd for spawning interactive terminal
@@ -798,22 +798,22 @@ class CoreHandler(socketserver.BaseRequestHandler):
             else:
                 logging.info("execute message with cmd=%s", command)
                 # execute command and send a response
-                if message.flags & MessageFlags.STRING.value or message.flags & MessageFlags.TEXT.value:
+                if message.flags.value & MessageFlags.STRING.value or message.flags.value & MessageFlags.TEXT.value:
                     # shlex.split() handles quotes within the string
-                    if message.flags & MessageFlags.LOCAL.value:
+                    if message.flags.value & MessageFlags.LOCAL.value:
                         status, res = utils.cmd_output(command)
                     else:
                         status, res = node.cmd_output(command)
                     logging.info("done exec cmd=%s with status=%d res=(%d bytes)", command, status, len(res))
-                    if message.flags & MessageFlags.TEXT.value:
+                    if message.flags.value & MessageFlags.TEXT.value:
                         tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.RESULT.value, res)
-                    if message.flags & MessageFlags.STRING.value:
+                    if message.flags.value & MessageFlags.STRING.value:
                         tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.STATUS.value, status)
                     reply = coreapi.CoreExecMessage.pack(0, tlv_data)
                     return reply,
                 # execute the command with no response
                 else:
-                    if message.flags & MessageFlags.LOCAL.value:
+                    if message.flags.value & MessageFlags.LOCAL.value:
                         utils.mute_detach(command)
                     else:
                         node.cmd(command, wait=False)
@@ -821,7 +821,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             logging.exception("error getting object: %s", node_num)
             # XXX wait and queue this message to try again later
             # XXX maybe this should be done differently
-            if not message.flags & MessageFlags.LOCAL.value:
+            if not message.flags.value & MessageFlags.LOCAL.value:
                 time.sleep(0.125)
                 self.queue_message(message)
 
@@ -841,7 +841,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         if execute_server:
             try:
                 logging.info("executing: %s", execute_server)
-                if message.flags & MessageFlags.STRING.value:
+                if message.flags.value & MessageFlags.STRING.value:
                     old_session_ids = set(self.coreemu.sessions.keys())
                 sys.argv = shlex.split(execute_server)
                 file_name = sys.argv[0]
@@ -863,7 +863,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     # allow time for session creation
                     time.sleep(0.25)
 
-                if message.flags & MessageFlags.STRING.value:
+                if message.flags.value & MessageFlags.STRING.value:
                     new_session_ids = set(self.coreemu.sessions.keys())
                     new_sid = new_session_ids.difference(old_session_ids)
                     try:
@@ -878,7 +878,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     retries = 10
                     # wait for session to enter RUNTIME state, to prevent GUI from
                     # connecting while nodes are still being instantiated
-                    while session.state != EventTypes.RUNTIME_STATE.value:
+                    while session.state != EventTypes.RUNTIME_STATE:
                         logging.debug("waiting for session %d to enter RUNTIME state", sid)
                         time.sleep(1)
                         retries -= 1
@@ -993,7 +993,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
     def handle_config_session(self, message_type, config_data):
         replies = []
         if message_type == ConfigFlags.REQUEST:
-            type_flags = ConfigFlags.NONE.value
+            type_flags = ConfigFlags.NONE
             config = self.session.options.get_configs()
             config_response = ConfigShim.config_data(0, None, type_flags, self.session.options, config)
             replies.append(config_response)
@@ -1032,12 +1032,12 @@ class CoreHandler(socketserver.BaseRequestHandler):
             node_id = config_data.node
             metadata_configs = self.session.metadata.get_configs()
             data_values = "|".join(["%s=%s" % (x, metadata_configs[x]) for x in metadata_configs])
-            data_types = tuple(ConfigDataTypes.STRING.value for _ in self.session.metadata.get_configs())
+            data_types = tuple(ConfigDataTypes.STRING for _ in self.session.metadata.get_configs())
             config_response = ConfigData(
                 message_type=0,
                 node=node_id,
                 object=self.session.metadata.name,
-                type=ConfigFlags.NONE.value,
+                type=ConfigFlags.NONE,
                 data_types=data_types,
                 data_values=data_values
             )
@@ -1098,8 +1098,8 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
             # send back a list of available services
             if opaque is None:
-                type_flag = ConfigFlags.NONE.value
-                data_types = tuple(repeat(ConfigDataTypes.BOOL.value, len(ServiceManager.services)))
+                type_flag = ConfigFlags.NONE
+                data_types = tuple(repeat(ConfigDataTypes.BOOL, len(ServiceManager.services)))
 
                 # sort groups by name and map services to groups
                 groups = set()
@@ -1165,8 +1165,8 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 service_name = services[0]
                 # send back:
                 # dirs, configs, startindex, startup, shutdown, metadata, config
-                type_flag = ConfigFlags.UPDATE.value
-                data_types = tuple(repeat(ConfigDataTypes.STRING.value, len(ServiceShim.keys)))
+                type_flag = ConfigFlags.UPDATE
+                data_types = tuple(repeat(ConfigDataTypes.STRING, len(ServiceShim.keys)))
                 service = self.session.services.get_service(node_id, service_name, default_service=True)
                 values = ServiceShim.tovaluelist(node, service)
                 captions = None
@@ -1200,7 +1200,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 if opaque is None:
                     values = values.split("|")
                     # store default services for a node type in self.defaultservices[]
-                    if data_types is None or data_types[0] != ConfigDataTypes.STRING.value:
+                    if data_types is None or data_types[0] != ConfigDataTypes.STRING:
                         logging.info(error_message)
                         return None
                     key = values.pop(0)
@@ -1243,7 +1243,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         logging.debug("received configure message for %s nodenum: %s", object_name, node_id)
         if message_type == ConfigFlags.REQUEST:
             logging.info("replying to configure request for model: %s", object_name)
-            typeflags = ConfigFlags.NONE.value
+            typeflags = ConfigFlags.NONE
 
             model_class = self.session.mobility.models.get(object_name)
             if not model_class:
@@ -1280,7 +1280,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         logging.debug("received configure message for %s nodenum: %s", object_name, node_id)
         if message_type == ConfigFlags.REQUEST:
             logging.info("replying to configure request for %s model", object_name)
-            typeflags = ConfigFlags.NONE.value
+            typeflags = ConfigFlags.NONE
             config = self.session.emane.get_configs()
             config_response = ConfigShim.config_data(0, node_id, typeflags, self.session.emane.emane_config, config)
             replies.append(config_response)
@@ -1313,7 +1313,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         logging.debug("received configure message for %s nodenum: %s", object_name, node_id)
         if message_type == ConfigFlags.REQUEST:
             logging.info("replying to configure request for model: %s", object_name)
-            typeflags = ConfigFlags.NONE.value
+            typeflags = ConfigFlags.NONE
 
             model_class = self.session.emane.models.get(object_name)
             if not model_class:
@@ -1344,7 +1344,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :param coreapi.CoreFileMessage message: file message to handle
         :return: reply messages
         """
-        if message.flags & MessageFlags.ADD.value:
+        if message.flags.value & MessageFlags.ADD.value:
             node_num = message.get_tlv(FileTlvs.NODE)
             file_name = message.get_tlv(FileTlvs.NAME)
             file_type = message.get_tlv(FileTlvs.TYPE)
@@ -1372,8 +1372,8 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     if not state.isdigit():
                         logging.error("error setting hook having state '%s'", state)
                         return ()
-                    state = int(state)
-                    self.session.add_hook(state, file_name, source_name, data)
+                    state = EventTypes(int(state))
+                    self.session.add_hook(state, file_name, data)
                     return ()
 
             # writing a file to the host
@@ -1494,7 +1494,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             if etime is None:
                 logging.warning("Event message scheduled event missing start time")
                 return ()
-            if message.flags & MessageFlags.ADD.value:
+            if message.flags.value & MessageFlags.ADD.value:
                 self.session.add_event(float(etime), node=node, name=name, data=data)
             else:
                 raise NotImplementedError
@@ -1530,19 +1530,19 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 unknown.append(service_name)
                 continue
 
-            if event_type == EventTypes.STOP.value or event_type == EventTypes.RESTART.value:
+            if event_type == EventTypes.STOP or event_type == EventTypes.RESTART:
                 status = self.session.services.stop_service(node, service)
                 if status:
                     fail += "Stop %s," % service.name
-            if event_type == EventTypes.START.value or event_type == EventTypes.RESTART.value:
+            if event_type == EventTypes.START or event_type == EventTypes.RESTART:
                 status = self.session.services.startup_service(node, service)
                 if status:
                     fail += "Start %s(%s)," % service.name
-            if event_type == EventTypes.PAUSE.value:
+            if event_type == EventTypes.PAUSE:
                 status = self.session.services.validate_service(node, service)
                 if status:
                     fail += "%s," % service.name
-            if event_type == EventTypes.RECONFIGURE.value:
+            if event_type == EventTypes.RECONFIGURE:
                 self.session.services.service_reconfigure(node, service)
 
         fail_data = ""
@@ -1610,7 +1610,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
                 if user:
                     session.set_user(user)
-        elif message.flags & MessageFlags.STRING.value and not message.flags & MessageFlags.ADD.value:
+        elif message.flags.value & MessageFlags.STRING.value and not message.flags.value & MessageFlags.ADD.value:
             # status request flag: send list of sessions
             return self.session_message(),
         else:
@@ -1623,7 +1623,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     logging.info("session %s not found (flags=0x%x)", session_id, message.flags)
                     continue
 
-                if message.flags & MessageFlags.ADD.value:
+                if message.flags.value & MessageFlags.ADD.value:
                     # connect to the first session that exists
                     logging.info("request to connect to session %s", session_id)
 
@@ -1648,9 +1648,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     if user:
                         self.session.set_user(user)
 
-                    if message.flags & MessageFlags.STRING.value:
+                    if message.flags.value & MessageFlags.STRING.value:
                         self.send_objects()
-                elif message.flags & MessageFlags.DELETE.value:
+                elif message.flags.value & MessageFlags.DELETE.value:
                     # shut down the specified session(s)
                     logging.info("request to terminate session %s", session_id)
                     self.coreemu.delete_session(session_id)
@@ -1690,11 +1690,11 @@ class CoreHandler(socketserver.BaseRequestHandler):
         with self.session._nodes_lock:
             for node_id in self.session.nodes:
                 node = self.session.nodes[node_id]
-                node_data = node.data(message_type=MessageFlags.ADD.value)
+                node_data = node.data(message_type=MessageFlags.ADD)
                 if node_data:
                     nodes_data.append(node_data)
 
-                node_links = node.all_link_data(flags=MessageFlags.ADD.value)
+                node_links = node.all_link_data(flags=MessageFlags.ADD)
                 for link_data in node_links:
                     links_data.append(link_data)
 
@@ -1712,7 +1712,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 config = mobility_configs[model_name]
                 model_class = self.session.mobility.models[model_name]
                 logging.debug("mobility config: node(%s) class(%s) values(%s)", node_id, model_class, config)
-                config_data = ConfigShim.config_data(0, node_id, ConfigFlags.UPDATE.value, model_class, config)
+                config_data = ConfigShim.config_data(0, node_id, ConfigFlags.UPDATE, model_class, config)
                 self.session.broadcast_config(config_data)
 
         # send emane model info
@@ -1722,21 +1722,21 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 config = emane_configs[model_name]
                 model_class = self.session.emane.models[model_name]
                 logging.debug("emane config: node(%s) class(%s) values(%s)", node_id, model_class, config)
-                config_data = ConfigShim.config_data(0, node_id, ConfigFlags.UPDATE.value, model_class, config)
+                config_data = ConfigShim.config_data(0, node_id, ConfigFlags.UPDATE, model_class, config)
                 self.session.broadcast_config(config_data)
 
         # service customizations
         service_configs = self.session.services.all_configs()
         for node_id, service in service_configs:
             opaque = "service:%s" % service.name
-            data_types = tuple(repeat(ConfigDataTypes.STRING.value, len(ServiceShim.keys)))
+            data_types = tuple(repeat(ConfigDataTypes.STRING, len(ServiceShim.keys)))
             node = self.session.get_node(node_id)
             values = ServiceShim.tovaluelist(node, service)
             config_data = ConfigData(
                 message_type=0,
                 node=node_id,
                 object=self.session.services.name,
-                type=ConfigFlags.UPDATE.value,
+                type=ConfigFlags.UPDATE,
                 data_types=data_types,
                 data_values=values,
                 session=str(self.session.id),
@@ -1746,7 +1746,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
             for file_name, config_data in self.session.services.all_files(service):
                 file_data = FileData(
-                    message_type=MessageFlags.ADD.value,
+                    message_type=MessageFlags.ADD,
                     node=node_id,
                     name=str(file_name),
                     type=opaque,
@@ -1760,7 +1760,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         for state in sorted(self.session._hooks.keys()):
             for file_name, config_data in self.session._hooks[state]:
                 file_data = FileData(
-                    message_type=MessageFlags.ADD.value,
+                    message_type=MessageFlags.ADD,
                     name=str(file_name),
                     type="hook:%s" % state,
                     data=str(config_data)
@@ -1769,18 +1769,18 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         # send session configuration
         session_config = self.session.options.get_configs()
-        config_data = ConfigShim.config_data(0, None, ConfigFlags.UPDATE.value, self.session.options, session_config)
+        config_data = ConfigShim.config_data(0, None, ConfigFlags.UPDATE, self.session.options, session_config)
         self.session.broadcast_config(config_data)
 
         # send session metadata
         metadata_configs = self.session.metadata.get_configs()
         if metadata_configs:
             data_values = "|".join(["%s=%s" % (x, metadata_configs[x]) for x in metadata_configs])
-            data_types = tuple(ConfigDataTypes.STRING.value for _ in self.session.metadata.get_configs())
+            data_types = tuple(ConfigDataTypes.STRING for _ in self.session.metadata.get_configs())
             config_data = ConfigData(
                 message_type=0,
                 object=self.session.metadata.name,
-                type=ConfigFlags.NONE.value,
+                type=ConfigFlags.NONE,
                 data_types=data_types,
                 data_values=data_values
             )

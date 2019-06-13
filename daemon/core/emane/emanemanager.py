@@ -103,7 +103,6 @@ class EmaneManager(ModelManager):
         :return: node/interface model configuration
         :rtype: dict
         """
-        logging.warning("runnign getifconfig with node_id: %s, interface: %s, model_name: %s", node_id, interface, model_name)
         # use the network-wide config values or interface(NEM)-specific values?
         if interface is None:
             return self.get_configs(node_id=node_id, config_type=model_name)
@@ -213,7 +212,6 @@ class EmaneManager(ModelManager):
         Load EMANE models and make them available.
         """
         for emane_model in emane_models:
-            logging.warning("loadking model: %s", emane_model)
             logging.info("loading emane model: %s", emane_model.__name__)
             emane_prefix = self.session.options.get_config("emane_prefix", default=DEFAULT_EMANE_PREFIX)
             emane_model.load(emane_prefix)
@@ -257,7 +255,7 @@ class EmaneManager(ModelManager):
             for node_id in self.session.nodes:
                 node = self.session.nodes[node_id]
                 if nodeutils.is_node(node, NodeTypes.EMANE):
-                    logging.debug("adding emane node: id(%s) name(%s)", node.id, node.name)
+                    logging.debug("node %s, with id: %s, is model %s", node.name, node_id, node.model)
                     self.add_node(node)
 
             if not self._emane_nodes:
@@ -297,7 +295,6 @@ class EmaneManager(ModelManager):
             if value == default_values[platform_id_start]:
                 return EmaneManager.NOT_READY
 
-        logging.warning("checking node models")
         self.check_node_models()
         return EmaneManager.SUCCESS
 
@@ -307,7 +304,6 @@ class EmaneManager(ModelManager):
         and start the daemons. Returns Emane.(SUCCESS, NOT_NEEDED, or
         NOT_READY) which is used to delay session instantiation.
         """
-        logging.warning("starting up emane")
         self.reset()
         r = self.setup()
 
@@ -317,7 +313,6 @@ class EmaneManager(ModelManager):
 
         nems = []
         with self._emane_node_lock:
-            logging.warning("building emane xml")
             self.buildxml()
             self.initeventservice()
             self.starteventmonitor()
@@ -340,7 +335,6 @@ class EmaneManager(ModelManager):
             except IOError:
                 logging.exception("Error writing EMANE NEMs file: %s")
 
-        logging.warning("finishing emane startup")
         return EmaneManager.SUCCESS
 
     def poststartup(self):
@@ -353,7 +347,7 @@ class EmaneManager(ModelManager):
         with self._emane_node_lock:
             for key in sorted(self._emane_nodes.keys()):
                 emane_node = self._emane_nodes[key]
-                logging.warning("post startup for emane node: %s - %s, model: %s", emane_node.id, emane_node.name, emane_node.model)
+                logging.debug("post startup for emane node: %s - %s, model: %s", emane_node.id, emane_node.name, emane_node.model)
                 emane_node.model.post_startup()
                 for netif in emane_node.netifs():
                     x, y, z = netif.node.position.get()
@@ -525,11 +519,11 @@ class EmaneManager(ModelManager):
         """
         for node_id in self._emane_nodes:
             emane_node = self._emane_nodes[node_id]
-            logging.warning("checking emane model for node: %s", node_id)
+            logging.debug("checking emane model for node: %s", node_id)
 
             # skip nodes that already have a model set
             if emane_node.model:
-                logging.warning("node(%s) already has model(%s)", emane_node.id, emane_node.model.name)
+                logging.debug("node(%s) already has model(%s)", emane_node.id, emane_node.model.name)
                 continue
 
             # set model configured for node, due to legacy messaging configuration before nodes exist
@@ -539,7 +533,7 @@ class EmaneManager(ModelManager):
                 raise ValueError("emane node has no model set")
 
             config = self.get_model_config(node_id=node_id, model_name=model_name)
-            logging.warning("setting emane model(%s) config(%s)", model_name, config)
+            logging.debug("setting emane model(%s) config(%s)", model_name, config)
             model_class = self.models[model_name]
             emane_node.setmodel(model_class, config)
 
@@ -593,7 +587,7 @@ class EmaneManager(ModelManager):
         logging.warning("running emanexml's buildnemxml")
         for key in sorted(self._emane_nodes.keys()):
             emane_node = self._emane_nodes[key]
-            logging.warning("building xml for emane_node %s", emane_node)
+            logging.warning("building xml for emane_node: %s, model: %s", emane_node, emane_node.model)
             emanexml.build_xml_files(self, emane_node)
 
     def buildtransportxml(self):
@@ -635,7 +629,7 @@ class EmaneManager(ModelManager):
         Start one EMANE daemon per node having a radio.
         Add a control network even if the user has not configured one.
         """
-        logging.info("starting emane daemons...")
+        logging.warning("starting emane daemons...")
         loglevel = str(EmaneManager.DEFAULT_LOG_LEVEL)
         cfgloglevel = self.session.options.get_config_int("emane_log_level")
         realtime = self.session.options.get_config_bool("emane_realtime", default=True)

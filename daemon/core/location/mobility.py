@@ -155,8 +155,7 @@ class MobilityManager(ModelManager):
 
         event_data = EventData(
             node=model.id,
-            # TODO: come back to these
-            event_type=event_type.value,
+            event_type=event_type,
             name="mobility:%s" % model.name,
             data=data,
             time="%s" % time.time()

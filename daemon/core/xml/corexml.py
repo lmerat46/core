@@ -7,7 +7,7 @@ import core.nodes.physical
 from core.emulator.emudata import InterfaceData
 from core.emulator.emudata import LinkOptions
 from core.emulator.emudata import NodeOptions
-from core.emulator.enumerations import NodeTypes
+from core.emulator.enumerations import NodeTypes, EventTypes
 from core.nodes import nodeutils
 from core.nodes.ipaddress import MacAddress
 
@@ -281,7 +281,7 @@ class CoreXmlWriter(object):
             for file_name, data in self.session._hooks[state]:
                 hook = etree.SubElement(hooks, "hook")
                 add_attribute(hook, "name", file_name)
-                add_attribute(hook, "state", state)
+                add_attribute(hook, "state", state.value)
                 hook.text = data
 
         if hooks.getchildren():
@@ -577,11 +577,10 @@ class CoreXmlReader(object):
 
         for hook in session_hooks.iterchildren():
             name = hook.get("name")
-            state = hook.get("state")
+            state = EventTypes(int(hook.get("state")))
             data = hook.text
-            hook_type = "hook:%s" % state
             logging.info("reading hook: state(%s) name(%s)", state, name)
-            self.session.set_hook(hook_type, file_name=name, source_name=None, data=data)
+            self.session.add_hook(state, file_name=name, data=data)
 
     def read_session_origin(self):
         session_origin = self.scenario.find("session_origin")

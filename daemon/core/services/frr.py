@@ -601,7 +601,7 @@ class FRRBabel(FrrService):
 
     @classmethod
     def generatefrrifcconfig(cls, node, ifc):
-        if ifc.net and ifc.net.linktype == LinkTypes.WIRELESS.value:
+        if ifc.net and ifc.net.linktype == LinkTypes.WIRELESS:
             return "  babel wireless\n  no babel split-horizon\n"
         else:
             return "  babel wired\n  babel split-horizon\n"

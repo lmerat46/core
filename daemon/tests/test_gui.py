@@ -25,9 +25,9 @@ def command_message(node, command):
     :param command: command to execute
     :return: packed execute message
     """
-    tlv_data = CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, node.id)
-    tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.NUMBER.value, 1)
-    tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.COMMAND.value, command)
+    tlv_data = CoreExecuteTlv.pack(ExecuteTlvs.NODE, node.id)
+    tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.NUMBER, 1)
+    tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.COMMAND, command)
     return coreapi.CoreExecMessage.pack(MessageFlags.STRING.value | MessageFlags.TEXT.value, tlv_data)
 
 
@@ -38,7 +38,7 @@ def state_message(state):
     :param core.enumerations.EventTypes state: state to create message for
     :return: packed event message
     """
-    tlv_data = coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, state.value)
+    tlv_data = coreapi.CoreEventTlv.pack(EventTlvs.TYPE, state.value)
     return coreapi.CoreEventMessage.pack(0, tlv_data)
 
 
@@ -52,12 +52,12 @@ def switch_link_message(switch, node, address, prefix_len):
     :param prefix_len: prefix length of address
     :return: packed link message
     """
-    tlv_data = coreapi.CoreLinkTlv.pack(LinkTlvs.N1_NUMBER.value, switch.id)
-    tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.N2_NUMBER.value, node.id)
-    tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.TYPE.value, LinkTypes.WIRED.value)
-    tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_NUMBER.value, 0)
-    tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_IP4.value, address)
-    tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_IP4_MASK.value, prefix_len)
+    tlv_data = coreapi.CoreLinkTlv.pack(LinkTlvs.N1_NUMBER, switch.id)
+    tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.N2_NUMBER, node.id)
+    tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.TYPE, LinkTypes.WIRED.value)
+    tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_NUMBER, 0)
+    tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_IP4, address)
+    tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_IP4_MASK, prefix_len)
     return coreapi.CoreLinkMessage.pack(MessageFlags.ADD.value, tlv_data)
 
 

@@ -31,7 +31,7 @@ from core.nodes.ipaddress import MacAddress
 
 class CoreTlvData(object):
     """
-    Helper base class used for packing and unpacking values using struct.
+    Helper base class used for packing and unpacking TLV values using struct.
     """
 
     # format string for packing data
@@ -96,7 +96,7 @@ class CoreTlvDataObj(CoreTlvData):
         """
         Convenience method for packing custom object data.
 
-        :param obj: custom object to pack
+        :param value: custom object to pack
         :return: length of data and the packed data itself
         :rtype: tuple
         """
@@ -400,7 +400,7 @@ class CoreTlv(object):
         """
         tlv_len, tlv_data = cls.tlv_data_class_map[tlv_type].pack(value)
         if tlv_len < 256:
-            hdr = struct.pack(cls.header_format, tlv_type, tlv_len)
+            hdr = struct.pack(cls.header_format, tlv_type.value, tlv_len)
         else:
             hdr = struct.pack(cls.long_header_format, tlv_type, 0, tlv_len)
         return hdr + tlv_data
@@ -445,26 +445,26 @@ class CoreNodeTlv(CoreTlv):
 
     tlv_type_map = NodeTlvs
     tlv_data_class_map = {
-        NodeTlvs.NUMBER.value: CoreTlvDataUint32,
-        NodeTlvs.TYPE.value: CoreTlvDataUint32,
-        NodeTlvs.NAME.value: CoreTlvDataString,
-        NodeTlvs.IP_ADDRESS.value: CoreTlvDataIpv4Addr,
-        NodeTlvs.MAC_ADDRESS.value: CoreTlvDataMacAddr,
-        NodeTlvs.IP6_ADDRESS.value: CoreTlvDataIPv6Addr,
-        NodeTlvs.MODEL.value: CoreTlvDataString,
-        NodeTlvs.EMULATION_SERVER.value: CoreTlvDataString,
-        NodeTlvs.SESSION.value: CoreTlvDataString,
-        NodeTlvs.X_POSITION.value: CoreTlvDataUint16,
-        NodeTlvs.Y_POSITION.value: CoreTlvDataUint16,
-        NodeTlvs.CANVAS.value: CoreTlvDataUint16,
-        NodeTlvs.EMULATION_ID.value: CoreTlvDataUint32,
-        NodeTlvs.NETWORK_ID.value: CoreTlvDataUint32,
-        NodeTlvs.SERVICES.value: CoreTlvDataString,
-        NodeTlvs.LATITUDE.value: CoreTlvDataString,
-        NodeTlvs.LONGITUDE.value: CoreTlvDataString,
-        NodeTlvs.ALTITUDE.value: CoreTlvDataString,
-        NodeTlvs.ICON.value: CoreTlvDataString,
-        NodeTlvs.OPAQUE.value: CoreTlvDataString,
+        NodeTlvs.NUMBER: CoreTlvDataUint32,
+        NodeTlvs.TYPE: CoreTlvDataUint32,
+        NodeTlvs.NAME: CoreTlvDataString,
+        NodeTlvs.IP_ADDRESS: CoreTlvDataIpv4Addr,
+        NodeTlvs.MAC_ADDRESS: CoreTlvDataMacAddr,
+        NodeTlvs.IP6_ADDRESS: CoreTlvDataIPv6Addr,
+        NodeTlvs.MODEL: CoreTlvDataString,
+        NodeTlvs.EMULATION_SERVER: CoreTlvDataString,
+        NodeTlvs.SESSION: CoreTlvDataString,
+        NodeTlvs.X_POSITION: CoreTlvDataUint16,
+        NodeTlvs.Y_POSITION: CoreTlvDataUint16,
+        NodeTlvs.CANVAS: CoreTlvDataUint16,
+        NodeTlvs.EMULATION_ID: CoreTlvDataUint32,
+        NodeTlvs.NETWORK_ID: CoreTlvDataUint32,
+        NodeTlvs.SERVICES: CoreTlvDataString,
+        NodeTlvs.LATITUDE: CoreTlvDataString,
+        NodeTlvs.LONGITUDE: CoreTlvDataString,
+        NodeTlvs.ALTITUDE: CoreTlvDataString,
+        NodeTlvs.ICON: CoreTlvDataString,
+        NodeTlvs.OPAQUE: CoreTlvDataString,
     }
 
 
@@ -475,38 +475,38 @@ class CoreLinkTlv(CoreTlv):
 
     tlv_type_map = LinkTlvs
     tlv_data_class_map = {
-        LinkTlvs.N1_NUMBER.value: CoreTlvDataUint32,
-        LinkTlvs.N2_NUMBER.value: CoreTlvDataUint32,
-        LinkTlvs.DELAY.value: CoreTlvDataUint64,
-        LinkTlvs.BANDWIDTH.value: CoreTlvDataUint64,
-        LinkTlvs.PER.value: CoreTlvDataString,
-        LinkTlvs.DUP.value: CoreTlvDataString,
-        LinkTlvs.JITTER.value: CoreTlvDataUint64,
-        LinkTlvs.MER.value: CoreTlvDataUint16,
-        LinkTlvs.BURST.value: CoreTlvDataUint16,
-        LinkTlvs.SESSION.value: CoreTlvDataString,
-        LinkTlvs.MBURST.value: CoreTlvDataUint16,
-        LinkTlvs.TYPE.value: CoreTlvDataUint32,
-        LinkTlvs.GUI_ATTRIBUTES.value: CoreTlvDataString,
-        LinkTlvs.UNIDIRECTIONAL.value: CoreTlvDataUint16,
-        LinkTlvs.EMULATION_ID.value: CoreTlvDataUint32,
-        LinkTlvs.NETWORK_ID.value: CoreTlvDataUint32,
-        LinkTlvs.KEY.value: CoreTlvDataUint32,
-        LinkTlvs.INTERFACE1_NUMBER.value: CoreTlvDataUint16,
-        LinkTlvs.INTERFACE1_IP4.value: CoreTlvDataIpv4Addr,
-        LinkTlvs.INTERFACE1_IP4_MASK.value: CoreTlvDataUint16,
-        LinkTlvs.INTERFACE1_MAC.value: CoreTlvDataMacAddr,
-        LinkTlvs.INTERFACE1_IP6.value: CoreTlvDataIPv6Addr,
-        LinkTlvs.INTERFACE1_IP6_MASK.value: CoreTlvDataUint16,
-        LinkTlvs.INTERFACE2_NUMBER.value: CoreTlvDataUint16,
-        LinkTlvs.INTERFACE2_IP4.value: CoreTlvDataIpv4Addr,
-        LinkTlvs.INTERFACE2_IP4_MASK.value: CoreTlvDataUint16,
-        LinkTlvs.INTERFACE2_MAC.value: CoreTlvDataMacAddr,
-        LinkTlvs.INTERFACE2_IP6.value: CoreTlvDataIPv6Addr,
-        LinkTlvs.INTERFACE2_IP6_MASK.value: CoreTlvDataUint16,
-        LinkTlvs.INTERFACE1_NAME.value: CoreTlvDataString,
-        LinkTlvs.INTERFACE2_NAME.value: CoreTlvDataString,
-        LinkTlvs.OPAQUE.value: CoreTlvDataString,
+        LinkTlvs.N1_NUMBER: CoreTlvDataUint32,
+        LinkTlvs.N2_NUMBER: CoreTlvDataUint32,
+        LinkTlvs.DELAY: CoreTlvDataUint64,
+        LinkTlvs.BANDWIDTH: CoreTlvDataUint64,
+        LinkTlvs.PER: CoreTlvDataString,
+        LinkTlvs.DUP: CoreTlvDataString,
+        LinkTlvs.JITTER: CoreTlvDataUint64,
+        LinkTlvs.MER: CoreTlvDataUint16,
+        LinkTlvs.BURST: CoreTlvDataUint16,
+        LinkTlvs.SESSION: CoreTlvDataString,
+        LinkTlvs.MBURST: CoreTlvDataUint16,
+        LinkTlvs.TYPE: CoreTlvDataUint32,
+        LinkTlvs.GUI_ATTRIBUTES: CoreTlvDataString,
+        LinkTlvs.UNIDIRECTIONAL: CoreTlvDataUint16,
+        LinkTlvs.EMULATION_ID: CoreTlvDataUint32,
+        LinkTlvs.NETWORK_ID: CoreTlvDataUint32,
+        LinkTlvs.KEY: CoreTlvDataUint32,
+        LinkTlvs.INTERFACE1_NUMBER: CoreTlvDataUint16,
+        LinkTlvs.INTERFACE1_IP4: CoreTlvDataIpv4Addr,
+        LinkTlvs.INTERFACE1_IP4_MASK: CoreTlvDataUint16,
+        LinkTlvs.INTERFACE1_MAC: CoreTlvDataMacAddr,
+        LinkTlvs.INTERFACE1_IP6: CoreTlvDataIPv6Addr,
+        LinkTlvs.INTERFACE1_IP6_MASK: CoreTlvDataUint16,
+        LinkTlvs.INTERFACE2_NUMBER: CoreTlvDataUint16,
+        LinkTlvs.INTERFACE2_IP4: CoreTlvDataIpv4Addr,
+        LinkTlvs.INTERFACE2_IP4_MASK: CoreTlvDataUint16,
+        LinkTlvs.INTERFACE2_MAC: CoreTlvDataMacAddr,
+        LinkTlvs.INTERFACE2_IP6: CoreTlvDataIPv6Addr,
+        LinkTlvs.INTERFACE2_IP6_MASK: CoreTlvDataUint16,
+        LinkTlvs.INTERFACE1_NAME: CoreTlvDataString,
+        LinkTlvs.INTERFACE2_NAME: CoreTlvDataString,
+        LinkTlvs.OPAQUE: CoreTlvDataString,
     }
 
 
@@ -517,13 +517,13 @@ class CoreExecuteTlv(CoreTlv):
 
     tlv_type_map = ExecuteTlvs
     tlv_data_class_map = {
-        ExecuteTlvs.NODE.value: CoreTlvDataUint32,
-        ExecuteTlvs.NUMBER.value: CoreTlvDataUint32,
-        ExecuteTlvs.TIME.value: CoreTlvDataUint32,
-        ExecuteTlvs.COMMAND.value: CoreTlvDataString,
-        ExecuteTlvs.RESULT.value: CoreTlvDataString,
-        ExecuteTlvs.STATUS.value: CoreTlvDataUint32,
-        ExecuteTlvs.SESSION.value: CoreTlvDataString,
+        ExecuteTlvs.NODE: CoreTlvDataUint32,
+        ExecuteTlvs.NUMBER: CoreTlvDataUint32,
+        ExecuteTlvs.TIME: CoreTlvDataUint32,
+        ExecuteTlvs.COMMAND: CoreTlvDataString,
+        ExecuteTlvs.RESULT: CoreTlvDataString,
+        ExecuteTlvs.STATUS: CoreTlvDataUint32,
+        ExecuteTlvs.SESSION: CoreTlvDataString,
     }
 
 
@@ -534,13 +534,13 @@ class CoreRegisterTlv(CoreTlv):
 
     tlv_type_map = RegisterTlvs
     tlv_data_class_map = {
-        RegisterTlvs.WIRELESS.value: CoreTlvDataString,
-        RegisterTlvs.MOBILITY.value: CoreTlvDataString,
-        RegisterTlvs.UTILITY.value: CoreTlvDataString,
-        RegisterTlvs.EXECUTE_SERVER.value: CoreTlvDataString,
-        RegisterTlvs.GUI.value: CoreTlvDataString,
-        RegisterTlvs.EMULATION_SERVER.value: CoreTlvDataString,
-        RegisterTlvs.SESSION.value: CoreTlvDataString,
+        RegisterTlvs.WIRELESS: CoreTlvDataString,
+        RegisterTlvs.MOBILITY: CoreTlvDataString,
+        RegisterTlvs.UTILITY: CoreTlvDataString,
+        RegisterTlvs.EXECUTE_SERVER: CoreTlvDataString,
+        RegisterTlvs.GUI: CoreTlvDataString,
+        RegisterTlvs.EMULATION_SERVER: CoreTlvDataString,
+        RegisterTlvs.SESSION: CoreTlvDataString,
     }
 
 
@@ -551,19 +551,19 @@ class CoreConfigTlv(CoreTlv):
 
     tlv_type_map = ConfigTlvs
     tlv_data_class_map = {
-        ConfigTlvs.NODE.value: CoreTlvDataUint32,
-        ConfigTlvs.OBJECT.value: CoreTlvDataString,
-        ConfigTlvs.TYPE.value: CoreTlvDataUint16,
-        ConfigTlvs.DATA_TYPES.value: CoreTlvDataUint16List,
-        ConfigTlvs.VALUES.value: CoreTlvDataString,
-        ConfigTlvs.CAPTIONS.value: CoreTlvDataString,
-        ConfigTlvs.BITMAP.value: CoreTlvDataString,
-        ConfigTlvs.POSSIBLE_VALUES.value: CoreTlvDataString,
-        ConfigTlvs.GROUPS.value: CoreTlvDataString,
-        ConfigTlvs.SESSION.value: CoreTlvDataString,
-        ConfigTlvs.INTERFACE_NUMBER.value: CoreTlvDataUint16,
-        ConfigTlvs.NETWORK_ID.value: CoreTlvDataUint32,
-        ConfigTlvs.OPAQUE.value: CoreTlvDataString,
+        ConfigTlvs.NODE: CoreTlvDataUint32,
+        ConfigTlvs.OBJECT: CoreTlvDataString,
+        ConfigTlvs.TYPE: CoreTlvDataUint16,
+        ConfigTlvs.DATA_TYPES: CoreTlvDataUint16List,
+        ConfigTlvs.VALUES: CoreTlvDataString,
+        ConfigTlvs.CAPTIONS: CoreTlvDataString,
+        ConfigTlvs.BITMAP: CoreTlvDataString,
+        ConfigTlvs.POSSIBLE_VALUES: CoreTlvDataString,
+        ConfigTlvs.GROUPS: CoreTlvDataString,
+        ConfigTlvs.SESSION: CoreTlvDataString,
+        ConfigTlvs.INTERFACE_NUMBER: CoreTlvDataUint16,
+        ConfigTlvs.NETWORK_ID: CoreTlvDataUint32,
+        ConfigTlvs.OPAQUE: CoreTlvDataString,
     }
 
 
@@ -574,15 +574,15 @@ class CoreFileTlv(CoreTlv):
 
     tlv_type_map = FileTlvs
     tlv_data_class_map = {
-        FileTlvs.NODE.value: CoreTlvDataUint32,
-        FileTlvs.NAME.value: CoreTlvDataString,
-        FileTlvs.MODE.value: CoreTlvDataString,
-        FileTlvs.NUMBER.value: CoreTlvDataUint16,
-        FileTlvs.TYPE.value: CoreTlvDataString,
-        FileTlvs.SOURCE_NAME.value: CoreTlvDataString,
-        FileTlvs.SESSION.value: CoreTlvDataString,
-        FileTlvs.DATA.value: CoreTlvDataString,
-        FileTlvs.COMPRESSED_DATA.value: CoreTlvDataString,
+        FileTlvs.NODE: CoreTlvDataUint32,
+        FileTlvs.NAME: CoreTlvDataString,
+        FileTlvs.MODE: CoreTlvDataString,
+        FileTlvs.NUMBER: CoreTlvDataUint16,
+        FileTlvs.TYPE: CoreTlvDataString,
+        FileTlvs.SOURCE_NAME: CoreTlvDataString,
+        FileTlvs.SESSION: CoreTlvDataString,
+        FileTlvs.DATA: CoreTlvDataString,
+        FileTlvs.COMPRESSED_DATA: CoreTlvDataString,
     }
 
 
@@ -593,19 +593,19 @@ class CoreInterfaceTlv(CoreTlv):
 
     tlv_type_map = InterfaceTlvs
     tlv_data_class_map = {
-        InterfaceTlvs.NODE.value: CoreTlvDataUint32,
-        InterfaceTlvs.NUMBER.value: CoreTlvDataUint16,
-        InterfaceTlvs.NAME.value: CoreTlvDataString,
-        InterfaceTlvs.IP_ADDRESS.value: CoreTlvDataIpv4Addr,
-        InterfaceTlvs.MASK.value: CoreTlvDataUint16,
-        InterfaceTlvs.MAC_ADDRESS.value: CoreTlvDataMacAddr,
-        InterfaceTlvs.IP6_ADDRESS.value: CoreTlvDataIPv6Addr,
-        InterfaceTlvs.IP6_MASK.value: CoreTlvDataUint16,
-        InterfaceTlvs.TYPE.value: CoreTlvDataUint16,
-        InterfaceTlvs.SESSION.value: CoreTlvDataString,
-        InterfaceTlvs.STATE.value: CoreTlvDataUint16,
-        InterfaceTlvs.EMULATION_ID.value: CoreTlvDataUint32,
-        InterfaceTlvs.NETWORK_ID.value: CoreTlvDataUint32,
+        InterfaceTlvs.NODE: CoreTlvDataUint32,
+        InterfaceTlvs.NUMBER: CoreTlvDataUint16,
+        InterfaceTlvs.NAME: CoreTlvDataString,
+        InterfaceTlvs.IP_ADDRESS: CoreTlvDataIpv4Addr,
+        InterfaceTlvs.MASK: CoreTlvDataUint16,
+        InterfaceTlvs.MAC_ADDRESS: CoreTlvDataMacAddr,
+        InterfaceTlvs.IP6_ADDRESS: CoreTlvDataIPv6Addr,
+        InterfaceTlvs.IP6_MASK: CoreTlvDataUint16,
+        InterfaceTlvs.TYPE: CoreTlvDataUint16,
+        InterfaceTlvs.SESSION: CoreTlvDataString,
+        InterfaceTlvs.STATE: CoreTlvDataUint16,
+        InterfaceTlvs.EMULATION_ID: CoreTlvDataUint32,
+        InterfaceTlvs.NETWORK_ID: CoreTlvDataUint32,
     }
 
 
@@ -616,12 +616,12 @@ class CoreEventTlv(CoreTlv):
 
     tlv_type_map = EventTlvs
     tlv_data_class_map = {
-        EventTlvs.NODE.value: CoreTlvDataUint32,
-        EventTlvs.TYPE.value: CoreTlvDataUint32,
-        EventTlvs.NAME.value: CoreTlvDataString,
-        EventTlvs.DATA.value: CoreTlvDataString,
-        EventTlvs.TIME.value: CoreTlvDataString,
-        EventTlvs.SESSION.value: CoreTlvDataString,
+        EventTlvs.NODE: CoreTlvDataUint32,
+        EventTlvs.TYPE: CoreTlvDataUint32,
+        EventTlvs.NAME: CoreTlvDataString,
+        EventTlvs.DATA: CoreTlvDataString,
+        EventTlvs.TIME: CoreTlvDataString,
+        EventTlvs.SESSION: CoreTlvDataString,
     }
 
 
@@ -632,14 +632,14 @@ class CoreSessionTlv(CoreTlv):
 
     tlv_type_map = SessionTlvs
     tlv_data_class_map = {
-        SessionTlvs.NUMBER.value: CoreTlvDataString,
-        SessionTlvs.NAME.value: CoreTlvDataString,
-        SessionTlvs.FILE.value: CoreTlvDataString,
-        SessionTlvs.NODE_COUNT.value: CoreTlvDataString,
-        SessionTlvs.DATE.value: CoreTlvDataString,
-        SessionTlvs.THUMB.value: CoreTlvDataString,
-        SessionTlvs.USER.value: CoreTlvDataString,
-        SessionTlvs.OPAQUE.value: CoreTlvDataString,
+        SessionTlvs.NUMBER: CoreTlvDataString,
+        SessionTlvs.NAME: CoreTlvDataString,
+        SessionTlvs.FILE: CoreTlvDataString,
+        SessionTlvs.NODE_COUNT: CoreTlvDataString,
+        SessionTlvs.DATE: CoreTlvDataString,
+        SessionTlvs.THUMB: CoreTlvDataString,
+        SessionTlvs.USER: CoreTlvDataString,
+        SessionTlvs.OPAQUE: CoreTlvDataString,
     }
 
 
@@ -650,13 +650,13 @@ class CoreExceptionTlv(CoreTlv):
 
     tlv_type_map = ExceptionTlvs
     tlv_data_class_map = {
-        ExceptionTlvs.NODE.value: CoreTlvDataUint32,
-        ExceptionTlvs.SESSION.value: CoreTlvDataString,
-        ExceptionTlvs.LEVEL.value: CoreTlvDataUint16,
-        ExceptionTlvs.SOURCE.value: CoreTlvDataString,
-        ExceptionTlvs.DATE.value: CoreTlvDataString,
-        ExceptionTlvs.TEXT.value: CoreTlvDataString,
-        ExceptionTlvs.OPAQUE.value: CoreTlvDataString,
+        ExceptionTlvs.NODE: CoreTlvDataUint32,
+        ExceptionTlvs.SESSION: CoreTlvDataString,
+        ExceptionTlvs.LEVEL: CoreTlvDataUint16,
+        ExceptionTlvs.SOURCE: CoreTlvDataString,
+        ExceptionTlvs.DATE: CoreTlvDataString,
+        ExceptionTlvs.TEXT: CoreTlvDataString,
+        ExceptionTlvs.OPAQUE: CoreTlvDataString,
     }
 
 
@@ -728,7 +728,7 @@ class CoreMessage(object):
         :param tlv_type: some sort of enumeration type of data to retrieve
         :return: TLV type data
         """
-        return self.tlv_data.get(tlv_type.value)
+        return self.tlv_data.get(tlv_type)
 
     def parse_data(self, data):
         """

@@ -39,6 +39,6 @@ def pack_values(clazz, packers):
 
         # pack and add to existing data
         logging.debug("packing: %s - %s type(%s)", tlv_type, value, type(value))
-        data += clazz.pack(tlv_type.value, value)
+        data += clazz.pack(tlv_type, value)
 
     return data

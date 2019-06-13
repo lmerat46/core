@@ -245,13 +245,13 @@ class CoreBroker(object):
         count = None
         logging.debug("received message type: %s", MessageTypes(msgtype))
         # snoop exec response for remote interactive TTYs
-        if msgtype == MessageTypes.EXECUTE and msgflags & MessageFlags.TTY:
+        if msgtype == MessageTypes.EXECUTE and msgflags.value & MessageFlags.TTY.value:
             data = self.fixupremotetty(msghdr, msgdata, server.host)
             logging.debug("created remote tty message: %s", data)
         elif msgtype == MessageTypes.NODE:
             # snoop node delete response to decrement node counts
             # TODO Re-examine in later value-s pass
-            if msgflags & MessageFlags.DELETE.value:
+            if msgflags.value & MessageFlags.DELETE.value:
                 msg = coreapi.CoreNodeMessage(msgflags, msghdr, msgdata)
                 nodenum = msg.get_tlv(NodeTlvs.NUMBER)
                 if nodenum is not None:
@@ -688,19 +688,19 @@ class CoreBroker(object):
             return
 
         # communicate this session"s current state to the server
-        tlvdata = coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, self.session.state)
+        tlvdata = coreapi.CoreEventTlv.pack(EventTlvs.TYPE, self.session.state.value)
         msg = coreapi.CoreEventMessage.pack(0, tlvdata)
         server.sock.send(msg)
 
         # send a Configuration message for the broker object and inform the
         # server of its local name
         tlvdata = b""
-        tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.OBJECT.value, "broker")
-        tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.TYPE.value, ConfigFlags.UPDATE.value)
-        tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.DATA_TYPES.value, (ConfigDataTypes.STRING.value,))
-        tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.VALUES.value,
+        tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.OBJECT, "broker")
+        tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.TYPE, ConfigFlags.UPDATE.value)
+        tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.DATA_TYPES, (ConfigDataTypes.STRING.value,))
+        tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.VALUES,
                                               "%s:%s:%s" % (server.name, server.host, server.port))
-        tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.SESSION.value, "%s" % self.session.id)
+        tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.SESSION, "%s" % self.session.id)
         msg = coreapi.CoreConfMessage.pack(0, tlvdata)
         server.sock.send(msg)
 
@@ -725,11 +725,11 @@ class CoreBroker(object):
         res = msg.get_tlv(ExecuteTlvs.RESULT)
 
         tlvdata = b""
-        tlvdata += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, nodenum)
-        tlvdata += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.NUMBER.value, execnum)
-        tlvdata += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.COMMAND.value, cmd)
+        tlvdata += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.NODE, nodenum)
+        tlvdata += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.NUMBER, execnum)
+        tlvdata += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.COMMAND, cmd)
         res = "ssh -X -f " + host + " xterm -e " + res
-        tlvdata += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.RESULT.value, res)
+        tlvdata += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.RESULT, res)
 
         return coreapi.CoreExecMessage.pack(msgflags, tlvdata)
 
@@ -808,7 +808,7 @@ class CoreBroker(object):
         """
         servers = set()
         handle_locally = False
-
+        import pdb;pdb.set_trace()
         # determine link message destination using non-network nodes
         nn = message.node_numbers()
         logging.debug("checking link nodes (%s) with network nodes (%s)", nn, self.network_nodes)
@@ -858,9 +858,9 @@ class CoreBroker(object):
                 logging.debug("handle locally(%s) and local node(%s)", handle_locally, localn)
                 if localn is None:
                     message = self.addlinkendpoints(message, servers1, servers2)
-                elif message.flags & MessageFlags.ADD.value:
+                elif message.flags.value & MessageFlags.ADD.value:
                     self.addtunnel(host, nn[0], nn[1], localn)
-                elif message.flags & MessageFlags.DELETE.value:
+                elif message.flags.value & MessageFlags.DELETE.value:
                     self.deltunnel(nn[0], nn[1])
                     handle_locally = False
             else:
@@ -891,7 +891,7 @@ class CoreBroker(object):
                 ip2 = server.host
                 break
         tlvdata = message.raw_message[coreapi.CoreMessage.header_len:]
-        tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.OPAQUE.value, "%s:%s" % (ip1, ip2))
+        tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.OPAQUE, "%s:%s" % (ip1, ip2))
         newraw = coreapi.CoreLinkMessage.pack(message.flags, tlvdata)
         msghdr = newraw[:coreapi.CoreMessage.header_len]
         return coreapi.CoreLinkMessage(message.flags, msghdr, tlvdata)
@@ -937,7 +937,7 @@ class CoreBroker(object):
         """
         hdr = msg[:coreapi.CoreMessage.header_len]
         msgtype, flags, _msglen = coreapi.CoreMessage.unpack_header(hdr)
-        msgcls = coreapi.CLASS_MAP[msgtype]
+        msgcls = coreapi.CLASS_MAP[MessageTypes(int(msgtype))]
         return self.handle_message(msgcls(flags, hdr, msg[coreapi.CoreMessage.header_len:]))
 
     def forwardmsg(self, message, servers):
@@ -1032,7 +1032,7 @@ class CoreBroker(object):
 
         # broadcast out instantiate complete
         tlvdata = b""
-        tlvdata += coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, EventTypes.INSTANTIATION_COMPLETE.value)
+        tlvdata += coreapi.CoreEventTlv.pack(EventTlvs.TYPE, EventTypes.INSTANTIATION_COMPLETE.value)
         message = coreapi.CoreEventMessage.pack(0, tlvdata)
         for session_client in self.session_clients:
             session_client.sendall(message)

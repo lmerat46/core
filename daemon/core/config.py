@@ -51,9 +51,9 @@ class ConfigShim(object):
         by the class, but node number, conf type flags, and values must
         be passed in.
 
-        :param int flags: message flags
+        :param core.emulator.enumeration.MessageFlags flags: message flags
         :param int node_id: node id
-        :param int type_flags: type flags
+        :param core.emulator.enumeration.ConfigFlags type_flags: type flags
         :param ConfigurableOptions configurable_options: options to create config data for
         :param dict config: configuration values for options
         :return: configuration data object
@@ -72,7 +72,7 @@ class ConfigShim(object):
             else:
                 captions += "|%s" % configuration.label
 
-            data_types.append(configuration.type.value)
+            data_types.append(configuration.type)
 
             options = ",".join(configuration.options)
             possible_values.append(options)
@@ -90,7 +90,7 @@ class ConfigShim(object):
             message_type=flags,
             node=node_id,
             object=configurable_options.name,
-            type=type_flags.value,
+            type=type_flags,
             data_types=tuple(data_types),
             data_values=key_values,
             captions=captions,
@@ -187,10 +187,8 @@ class ConfigurableManager(object):
         :param str config_type: configuration type to store configuration for
         :return: nothing
         """
-        logging.warning("setting config for node(%s) type(%s): %s", node_id, config_type, config)
         node_configs = self.node_configurations.setdefault(node_id, OrderedDict())
         node_configs[config_type] = config
-        logging.warning("node_configs: %s", node_configs)
 
     def get_config(self, _id, node_id=_default_node, config_type=_default_type, default=None):
         """
@@ -316,7 +314,6 @@ class ModelManager(ConfigurableManager):
         :param dict config: configuration data to set for model
         :return: nothing
         """
-        logging.warning("setting model config: node_id: %s, model_name: %s, config: %s", node_id, model_name, config)
         # get model class to configure
         model_class = self.models.get(model_name)
         if not model_class:

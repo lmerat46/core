@@ -24,8 +24,8 @@ class EmaneNet(CoreNetworkBase):
     """
     EMANE network base class.
     """
-    apitype = NodeTypes.EMANE.value
-    linktype = LinkTypes.WIRELESS.value
+    apitype = NodeTypes.EMANE
+    linktype = LinkTypes.WIRELESS
     # icon used
     type = "wlan"
 
@@ -76,13 +76,13 @@ class EmaneNode(EmaneNet):
         """
         set the EmaneModel associated with this node
         """
-        logging.warning("adding model: %s", model.name)
-        if model.config_type == RegisterTlvs.WIRELESS.value:
+        logging.info("adding model: %s", model.name)
+        if model.config_type == RegisterTlvs.WIRELESS:
             # EmaneModel really uses values from ConfigurableManager
             #  when buildnemxml() is called, not during init()
             self.model = model(session=self.session, _id=self.id)
             self.model.update_config(config)
-        elif model.config_type == RegisterTlvs.MOBILITY.value:
+        elif model.config_type == RegisterTlvs.MOBILITY:
             self.mobility = model(session=self.session, _id=self.id)
             self.mobility.update_config(config)
 

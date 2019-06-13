@@ -166,7 +166,7 @@ class Sdt(object):
 
         self.connected = True
         # refresh all objects in SDT3D when connecting after session start
-        if not flags & MessageFlags.ADD.value and not self.sendobjs():
+        if not flags & MessageFlags.ADD and not self.sendobjs():
             return False
 
         return True
@@ -253,14 +253,14 @@ class Sdt(object):
         """
         if not self.connect():
             return
-        if flags & MessageFlags.DELETE.value:
+        if flags & MessageFlags.DELETE:
             self.cmd("delete node,%d" % nodenum)
             return
         if x is None or y is None:
             return
         lat, lon, alt = self.session.location.getgeo(x, y, z)
         pos = "pos %.6f,%.6f,%.6f" % (lon, lat, alt)
-        if flags & MessageFlags.ADD.value:
+        if flags & MessageFlags.ADD:
             if icon is not None:
                 node_type = name
                 icon = icon.replace("$CORE_DATA_DIR", constants.CORE_DATA_DIR)
@@ -301,9 +301,9 @@ class Sdt(object):
             return
         if not self.connect():
             return
-        if flags & MessageFlags.DELETE.value:
+        if flags & MessageFlags.DELETE:
             self.cmd("delete link,%s,%s" % (node1num, node2num))
-        elif flags & MessageFlags.ADD.value:
+        elif flags & MessageFlags.ADD:
             attr = ""
             if wireless:
                 attr = " line green,2"
@@ -449,7 +449,7 @@ class Sdt(object):
         wl = link_msg_type == LinkTypes.WIRELESS
         if nodenum1 in self.remotes:
             r = self.remotes[nodenum1]
-            if msg.flags & MessageFlags.DELETE.value:
+            if msg.flags & MessageFlags.DELETE:
                 if (nodenum2, wl) in r.links:
                     r.links.remove((nodenum2, wl))
             else:

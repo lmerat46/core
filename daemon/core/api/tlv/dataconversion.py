@@ -16,7 +16,7 @@ def convert_node(node_data):
     """
     tlv_data = structutils.pack_values(coreapi.CoreNodeTlv, [
         (NodeTlvs.NUMBER, node_data.id),
-        (NodeTlvs.TYPE, node_data.node_type),
+        (NodeTlvs.TYPE, node_data.node_type.value),
         (NodeTlvs.NAME, node_data.name),
         (NodeTlvs.IP_ADDRESS, node_data.ip_address),
         (NodeTlvs.MAC_ADDRESS, node_data.mac_address),
@@ -36,7 +36,7 @@ def convert_node(node_data):
         (NodeTlvs.ICON, node_data.icon),
         (NodeTlvs.OPAQUE, node_data.opaque)
     ])
-    return coreapi.CoreNodeMessage.pack(node_data.message_type, tlv_data)
+    return coreapi.CoreNodeMessage.pack(node_data.message_type.value, tlv_data)
 
 
 def convert_config(config_data):

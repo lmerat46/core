@@ -4,6 +4,7 @@ import os
 import re
 import tempfile
 import time
+import pdb
 
 import grpc
 from builtins import int
@@ -33,6 +34,8 @@ def convert_value(value):
 def get_config_groups(config, configurable_options):
     groups = []
     config_options = []
+
+    #pdb.set_trace()
 
     for configuration in configurable_options.configurations():
         value = config[configuration.id]
@@ -103,7 +106,7 @@ def convert_link(session, link_data):
     )
 
     return core_pb2.Link(
-        type=link_data.link_type, node_one_id=link_data.node1_id, node_two_id=link_data.node2_id,
+        type=link_data.link_type.value, node_one_id=link_data.node1_id, node_two_id=link_data.node2_id,
         interface_one=interface_one, interface_two=interface_two, options=options
     )
 
@@ -173,7 +176,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session.set_state(EventTypes.DEFINITION_STATE)
         session.location.setrefgeo(47.57917, -122.13232, 2.0)
         session.location.refscale = 150000.0
-        return core_pb2.CreateSessionResponse(session_id=session.id, state=session.state)
+        return core_pb2.CreateSessionResponse(session_id=session.id, state=session.state.value)
 
     def DeleteSession(self, request, context):
         logging.debug("delete session: %s", request)
@@ -186,7 +189,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         for session_id in self.coreemu.sessions:
             session = self.coreemu.sessions[session_id]
             session_summary = core_pb2.SessionSummary(
-                id=session_id, state=session.state, nodes=session.get_node_count())
+                id=session_id, state=session.state.value, nodes=session.get_node_count())
             sessions.append(session_summary)
         return core_pb2.GetSessionsResponse(sessions=sessions)
 
@@ -258,7 +261,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             if not isinstance(node.id, int):
                 continue
 
-            node_type = nodeutils.get_node_type(node.__class__).value
+            node_type = nodeutils.get_node_type(node.__class__)
             model = getattr(node, "type", None)
             position = core_pb2.Position(x=node.position.x, y=node.position.y, z=node.position.z)
 
@@ -273,13 +276,13 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
             node_proto = core_pb2.Node(
                 id=node.id, name=node.name, emane=emane_model, model=model,
-                type=node_type, position=position, services=services)
+                type=node_type.value, position=position, services=services)
             nodes.append(node_proto)
 
             node_links = get_links(session, node)
             links.extend(node_links)
 
-        session_proto = core_pb2.Session(state=session.state, nodes=nodes, links=links)
+            session_proto = core_pb2.Session(state=session.state.value, nodes=nodes, links=links)
         return core_pb2.GetSessionResponse(session=session_proto)
 
     def Events(self, request, context):
@@ -363,7 +366,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             unidirectional=event.unidirectional
         )
         link = core_pb2.Link(
-            type=event.link_type, node_one_id=event.node1_id, node_two_id=event.node2_id,
+            type=event.link_type.value, node_one_id=event.node1_id, node_two_id=event.node2_id,
             interface_one=interface_one, interface_two=interface_two, options=options)
         return core_pb2.LinkEvent(message_type=event.message_type, link=link)
 
@@ -373,7 +376,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             event_time = float(event_time)
         return core_pb2.SessionEvent(
             node_id=event.node,
-            event=event.event_type,
+            event=event.event_type.value,
             name=event.name,
             data=event.data,
             time=event_time,
@@ -385,10 +388,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         if event.session is not None:
             session_id = int(event.session)
         return core_pb2.ConfigEvent(
-            message_type=event.message_type,
+            message_type=event.message_type.value,
             node_id=event.node,
             object=event.object,
-            type=event.type,
+            type=event.type.value,
             captions=event.captions,
             bitmap=event.bitmap,
             data_values=event.data_values,
@@ -398,7 +401,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             interface=event.interface_number,
             network_id=event.network_id,
             opaque=event.opaque,
-            data_types=event.data_types
+            data_types=[x.value for x in event.data_types]
         )
 
     def _handle_exception_event(self, event):
@@ -414,7 +417,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
     def _handle_file_event(self, event):
         return core_pb2.FileEvent(
-            message_type=event.message_type,
+            message_type=event.message_type.value,
             node_id=event.node,
             name=event.name,
             mode=event.mode,
@@ -477,7 +480,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         node_id = node_proto.id
         node_type = node_proto.type
         if node_type is None:
-            node_type = NodeTypes.DEFAULT.value
+            node_type = NodeTypes.DEFAULT
         node_type = NodeTypes(node_type)
 
         node_options = NodeOptions(name=node_proto.name, model=node_proto.model)
@@ -519,9 +522,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         services = [x.name for x in getattr(node, "services", [])]
         position = core_pb2.Position(x=node.position.x, y=node.position.y, z=node.position.z)
-        node_type = nodeutils.get_node_type(node.__class__).value
+        node_type = nodeutils.get_node_type(node.__class__)
         node = core_pb2.Node(
-            id=node.id, name=node.name, type=node_type, emane=emane_model, model=node.type, position=position,
+            id=node.id, name=node.name, type=node_type.value, emane=emane_model, model=node.type, position=position,
             services=services)
 
         return core_pb2.GetNodeResponse(node=node, interfaces=interfaces)
@@ -683,7 +686,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         for state in session._hooks:
             state_hooks = session._hooks[state]
             for file_name, file_data in state_hooks:
-                hook = core_pb2.Hook(state=state, file=file_name, data=file_data)
+                hook = core_pb2.Hook(state=state.value, file=file_name, data=file_data)
                 hooks.append(hook)
         return core_pb2.GetHooksResponse(hooks=hooks)
 
@@ -691,7 +694,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("add hook: %s", request)
         session = self.get_session(request.session_id, context)
         hook = request.hook
-        session.add_hook(hook.state, hook.file, None, hook.data)
+        state = EventTypes(int(hook.state))
+        session.add_hook(state, hook.file, hook.data)
         return core_pb2.AddHookResponse(result=True)
 
     def GetMobilityConfigs(self, request, context):

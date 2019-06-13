@@ -4,7 +4,7 @@ import pytest
 
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.emudata import NodeOptions
-from core.emulator.enumerations import NodeTypes
+from core.emulator.enumerations import NodeTypes, EventTypes
 from core.location.mobility import BasicRangeModel
 from core.services.utility import SshService
 
@@ -21,7 +21,7 @@ class TestXml:
         # create hook
         file_name = "runtime_hook.sh"
         data = "#!/bin/sh\necho hello"
-        session.set_hook("hook:4", file_name, None, data)
+        session.add_hook(EventTypes.RUNTIME_STATE, file_name, data)
 
         # save xml
         xml_file = tmpdir.join("session.xml")

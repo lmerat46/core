@@ -211,14 +211,17 @@ def build_xml_files(emane_manager, node):
     """
     logging.warning("building all emane xml for node(%s): %s, model: %s", node, node.name, node.model)
     if node.model is None:
+        logging.warning("model is none, BAD")
         return
 
     # get model configurations
     config = emane_manager.get_configs(node.model.id, node.model.name)
     if not config:
+        logging.warning("config is none, BAD")
         return
 
     # build XML for overall network (EmaneNode) configs
+    logging.warning("building xml files for node: %s, model: %s, and config: %s", node, node.model, config)
     node.model.build_xml_files(config)
 
     # build XML for specific interface (NEM) configs
@@ -231,6 +234,7 @@ def build_xml_files(emane_manager, node):
         # check for interface specific emane configuration and write xml files, if needed
         config = emane_manager.getifcconfig(node.model.id, netif, node.model.name)
         if config:
+            logging.warning("*building xml files for node: %s, model: %s, and config: %s, netif: %s", node, node.model, config, netif)
             node.model.build_xml_files(config, netif)
 
         # check transport type needed for interface
@@ -242,9 +246,11 @@ def build_xml_files(emane_manager, node):
             rtype = netif.transport_type
 
     if need_virtual:
+        logging.warning("building transport")
         build_transport_xml(emane_manager, node, vtype)
 
     if need_raw:
+        logging.warning("building raw")
         build_transport_xml(emane_manager, node, rtype)
 
 
