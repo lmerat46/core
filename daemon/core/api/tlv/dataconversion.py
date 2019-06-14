@@ -46,11 +46,12 @@ def convert_config(config_data):
     :param core.data.ConfigData config_data: config data to convert
     :return: packed message
     """
+    data_type_values = tuple(x.value for x in config_data.data_types)
     tlv_data = structutils.pack_values(coreapi.CoreConfigTlv, [
         (ConfigTlvs.NODE, config_data.node),
         (ConfigTlvs.OBJECT, config_data.object),
-        (ConfigTlvs.TYPE, config_data.type),
-        (ConfigTlvs.DATA_TYPES, config_data.data_types),
+        (ConfigTlvs.TYPE, config_data.type.value),
+        (ConfigTlvs.DATA_TYPES, data_type_values),
         (ConfigTlvs.VALUES, config_data.data_values),
         (ConfigTlvs.CAPTIONS, config_data.captions),
         (ConfigTlvs.BITMAP, config_data.bitmap),
@@ -61,4 +62,4 @@ def convert_config(config_data):
         (ConfigTlvs.NETWORK_ID, config_data.network_id),
         (ConfigTlvs.OPAQUE, config_data.opaque),
     ])
-    return coreapi.CoreConfMessage.pack(config_data.message_type, tlv_data)
+    return coreapi.CoreConfMessage.pack(config_data.message_type.value, tlv_data)

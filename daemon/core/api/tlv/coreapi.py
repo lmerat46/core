@@ -402,7 +402,7 @@ class CoreTlv(object):
         if tlv_len < 256:
             hdr = struct.pack(cls.header_format, tlv_type.value, tlv_len)
         else:
-            hdr = struct.pack(cls.long_header_format, tlv_type, 0, tlv_len)
+            hdr = struct.pack(cls.long_header_format, tlv_type.value, 0, tlv_len)
         return hdr + tlv_data
 
     @classmethod
@@ -701,8 +701,8 @@ class CoreMessage(object):
         """
         Pack CORE message data.
 
-        :param message_flags: message flags to pack with data
-        :param tlv_data: data to get length from for packing
+        :param int message_flags: message flags to pack with data
+        :param Enum tlv_data: data to get length from for packing
         :return: combined header and tlv data
         """
         header = struct.pack(cls.header_format, cls.message_type.value, message_flags, len(tlv_data))

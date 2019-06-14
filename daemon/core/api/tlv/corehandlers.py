@@ -253,7 +253,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             (FileTlvs.DATA, file_data.data),
             (FileTlvs.COMPRESSED_DATA, file_data.compressed_data),
         ])
-        message = coreapi.CoreFileMessage.pack(file_data.message_type, tlv_data)
+        message = coreapi.CoreFileMessage.pack(file_data.message_type.value, tlv_data)
 
         try:
             self.sendall(message)
@@ -995,7 +995,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         if message_type == ConfigFlags.REQUEST:
             type_flags = ConfigFlags.NONE
             config = self.session.options.get_configs()
-            config_response = ConfigShim.config_data(0, None, type_flags, self.session.options, config)
+            config_response = ConfigShim.config_data(MessageFlags.NONE, None, type_flags, self.session.options, config)
             replies.append(config_response)
         elif message_type != ConfigFlags.RESET and config_data.data_values:
             values = ConfigShim.str_to_dict(config_data.data_values)
@@ -1034,7 +1034,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             data_values = "|".join(["%s=%s" % (x, metadata_configs[x]) for x in metadata_configs])
             data_types = tuple(ConfigDataTypes.STRING for _ in self.session.metadata.get_configs())
             config_response = ConfigData(
-                message_type=0,
+                message_type=MessageFlags.NONE,
                 node=node_id,
                 object=self.session.metadata.name,
                 type=ConfigFlags.NONE,
@@ -1174,7 +1174,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 groups = None
 
             config_response = ConfigData(
-                message_type=0,
+                message_type=MessageFlags.NONE,
                 node=node_id,
                 object=self.session.services.name,
                 type=type_flag,
@@ -1200,9 +1200,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 if opaque is None:
                     values = values.split("|")
                     # store default services for a node type in self.defaultservices[]
-                    if data_types is None or data_types[0] != ConfigDataTypes.STRING:
-                        logging.info(error_message)
-                        return None
+                    if data_types is None or data_types[0] != ConfigDataTypes.STRING.value:
+                        logging.error(error_message)
+                        return replies
                     key = values.pop(0)
                     self.session.services.default_services[key] = values
                     logging.debug("default services for type %s set to %s", key, values)
@@ -1251,7 +1251,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 return []
 
             config = self.session.mobility.get_model_config(node_id, object_name)
-            config_response = ConfigShim.config_data(0, node_id, typeflags, model_class, config)
+            config_response = ConfigShim.config_data(MessageFlags.NONE, node_id, typeflags, model_class, config)
             replies.append(config_response)
         elif message_type != ConfigFlags.RESET:
             # store the configuration values for later use, when the node
@@ -1282,7 +1282,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             logging.info("replying to configure request for %s model", object_name)
             typeflags = ConfigFlags.NONE
             config = self.session.emane.get_configs()
-            config_response = ConfigShim.config_data(0, node_id, typeflags, self.session.emane.emane_config, config)
+            config_response = ConfigShim.config_data(MessageFlags.NONE, node_id, typeflags, self.session.emane.emane_config, config)
             replies.append(config_response)
         elif message_type != ConfigFlags.RESET:
             if not object_name:
@@ -1321,7 +1321,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 return []
 
             config = self.session.emane.get_model_config(node_id, object_name)
-            config_response = ConfigShim.config_data(0, node_id, typeflags, model_class, config)
+            config_response = ConfigShim.config_data(MessageFlags.NONE, node_id, typeflags, model_class, config)
             replies.append(config_response)
         elif message_type != ConfigFlags.RESET:
             # store the configuration values for later use, when the node
@@ -1477,7 +1477,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     self.session.mobility_event(event_data)
                     handled = True
             if not handled:
-                logging.warning("Unhandled event message: event type %s ", event_type.name)
+                logging.warning("Unhandled event message: event type %s", event_type.name)
         elif event_type == EventTypes.FILE_OPEN:
             filename = event_data.name
             self.session.open_xml(filename, start=False)
@@ -1712,7 +1712,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 config = mobility_configs[model_name]
                 model_class = self.session.mobility.models[model_name]
                 logging.debug("mobility config: node(%s) class(%s) values(%s)", node_id, model_class, config)
-                config_data = ConfigShim.config_data(0, node_id, ConfigFlags.UPDATE, model_class, config)
+                config_data = ConfigShim.config_data(MessageFlags.NONE, node_id, ConfigFlags.UPDATE, model_class, config)
                 self.session.broadcast_config(config_data)
 
         # send emane model info
@@ -1722,7 +1722,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 config = emane_configs[model_name]
                 model_class = self.session.emane.models[model_name]
                 logging.debug("emane config: node(%s) class(%s) values(%s)", node_id, model_class, config)
-                config_data = ConfigShim.config_data(0, node_id, ConfigFlags.UPDATE, model_class, config)
+                config_data = ConfigShim.config_data(MessageFlags.NONE, node_id, ConfigFlags.UPDATE, model_class, config)
                 self.session.broadcast_config(config_data)
 
         # service customizations
@@ -1733,7 +1733,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             node = self.session.get_node(node_id)
             values = ServiceShim.tovaluelist(node, service)
             config_data = ConfigData(
-                message_type=0,
+                message_type=MessageFlags.NONE,
                 node=node_id,
                 object=self.session.services.name,
                 type=ConfigFlags.UPDATE,
@@ -1769,7 +1769,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         # send session configuration
         session_config = self.session.options.get_configs()
-        config_data = ConfigShim.config_data(0, None, ConfigFlags.UPDATE, self.session.options, session_config)
+        config_data = ConfigShim.config_data(MessageFlags.NONE, None, ConfigFlags.UPDATE, self.session.options, session_config)
         self.session.broadcast_config(config_data)
 
         # send session metadata
@@ -1778,7 +1778,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             data_values = "|".join(["%s=%s" % (x, metadata_configs[x]) for x in metadata_configs])
             data_types = tuple(ConfigDataTypes.STRING for _ in self.session.metadata.get_configs())
             config_data = ConfigData(
-                message_type=0,
+                message_type=MessageFlags.NONE,
                 object=self.session.metadata.name,
                 type=ConfigFlags.NONE,
                 data_types=data_types,

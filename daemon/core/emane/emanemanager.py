@@ -451,7 +451,7 @@ class EmaneManager(ModelManager):
             typeflags = ConfigFlags.UPDATE
             self.set_config("platform_id_start", str(platformid))
             self.set_config("nem_id_start", str(nemid))
-            config_data = ConfigShim.config_data(0, None, typeflags, self.emane_config, self.get_configs())
+            config_data = ConfigShim.config_data(MessageFlags.NONE, None, typeflags, self.emane_config, self.get_configs())
             message = dataconversion.convert_config(config_data)
             server.sock.send(message)
             # increment nemid for next server by number of interfaces

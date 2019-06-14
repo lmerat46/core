@@ -39,7 +39,7 @@ def state_message(state):
     :return: packed event message
     """
     tlv_data = coreapi.CoreEventTlv.pack(EventTlvs.TYPE, state.value)
-    return coreapi.CoreEventMessage.pack(0, tlv_data)
+    return coreapi.CoreEventMessage.pack(MessageFlags.NONE.value, tlv_data)
 
 
 def switch_link_message(switch, node, address, prefix_len):
