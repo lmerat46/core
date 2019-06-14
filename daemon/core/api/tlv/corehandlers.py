@@ -142,7 +142,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         return socketserver.BaseRequestHandler.finish(self)
 
-    def session_message(self, flags=0):
+    def session_message(self, flags=MessageFlags.NONE):
         """
         Build CORE API Sessions message based on current session info.
 
@@ -390,7 +390,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         tlv_data += coreapi.CoreRegisterTlv.pack(self.session.options.config_type, self.session.options.name)
         tlv_data += coreapi.CoreRegisterTlv.pack(self.session.metadata.config_type, self.session.metadata.name)
 
-        return coreapi.CoreRegMessage.pack(MessageFlags.ADD.value, tlv_data)
+        return coreapi.CoreRegMessage.pack(MessageFlags.ADD, tlv_data)
 
     def sendall(self, data):
         """
@@ -628,7 +628,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :return: replies to node message
         """
         replies = []
-        if message.flags & MessageFlags.ADD.value and message.flags & MessageFlags.DELETE.value:
+        if message.flags & MessageFlags.ADD and message.flags & MessageFlags.DELETE:
             logging.warning("ignoring invalid message: add and delete flag both set")
             return ()
 
@@ -668,23 +668,23 @@ class CoreHandler(socketserver.BaseRequestHandler):
         if services:
             node_options.services = services.split("|")
 
-        if message.flags & MessageFlags.ADD.value:
+        if message.flags & MessageFlags.ADD:
             node = self.session.add_node(node_type, node_id, node_options)
             if node:
-                if message.flags & MessageFlags.STRING.value:
+                if message.flags & MessageFlags.STRING:
                     self.node_status_request[node.id] = True
 
                 if self.session.state == EventTypes.RUNTIME_STATE:
                     self.send_node_emulation_id(node.id)
-        elif message.flags & MessageFlags.DELETE.value:
+        elif message.flags & MessageFlags.DELETE:
             with self._shutdown_lock:
                 result = self.session.delete_node(node_id)
 
                 # if we deleted a node broadcast out its removal
-                if result and message.flags & MessageFlags.STRING.value:
+                if result and message.flags & MessageFlags.STRING:
                     tlvdata = b""
                     tlvdata += coreapi.CoreNodeTlv.pack(NodeTlvs.NUMBER, node_id)
-                    flags = MessageFlags.DELETE.value | MessageFlags.LOCAL.value
+                    flags = MessageFlags.DELETE | MessageFlags.LOCAL
                     replies.append(coreapi.CoreNodeMessage.pack(flags, tlvdata))
         # node update
         else:
@@ -743,9 +743,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
         link_options.key = message.get_tlv(LinkTlvs.KEY)
         link_options.opaque = message.get_tlv(LinkTlvs.OPAQUE)
 
-        if message.flags & MessageFlags.ADD.value:
+        if message.flags & MessageFlags.ADD:
             self.session.add_link(node_one_id, node_two_id, interface_one, interface_two, link_options)
-        elif message.flags & MessageFlags.DELETE.value:
+        elif message.flags & MessageFlags.DELETE:
             self.session.delete_link(node_one_id, node_two_id, interface_one.id, interface_two.id)
         else:
             self.session.update_link(node_one_id, node_two_id, interface_one.id, interface_two.id, link_options)
@@ -765,7 +765,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         command = message.get_tlv(ExecuteTlvs.COMMAND)
 
         # local flag indicates command executed locally, not on a node
-        if node_num is None and not message.flags & MessageFlags.LOCAL.value:
+        if node_num is None and not message.flags & MessageFlags.LOCAL:
             raise ValueError("Execute Message is missing node number.")
 
         if execute_num is None:
@@ -785,7 +785,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.NUMBER, execute_num)
             tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.COMMAND, command)
 
-            if message.flags & MessageFlags.TTY.value:
+            if message.flags & MessageFlags.TTY:
                 if node_num is None:
                     raise NotImplementedError
                 # echo back exec message with cmd for spawning interactive terminal
@@ -793,27 +793,27 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     command = "/bin/bash"
                 res = node.termcmdstring(command)
                 tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.RESULT, res)
-                reply = coreapi.CoreExecMessage.pack(MessageFlags.TTY.value, tlv_data)
+                reply = coreapi.CoreExecMessage.pack(MessageFlags.TTY, tlv_data)
                 return reply,
             else:
                 logging.info("execute message with cmd=%s", command)
                 # execute command and send a response
-                if message.flags & MessageFlags.STRING.value or message.flags & MessageFlags.TEXT.value:
+                if message.flags & MessageFlags.STRING or message.flags & MessageFlags.TEXT:
                     # shlex.split() handles quotes within the string
-                    if message.flags & MessageFlags.LOCAL.value:
+                    if message.flags & MessageFlags.LOCAL:
                         status, res = utils.cmd_output(command)
                     else:
                         status, res = node.cmd_output(command)
                     logging.info("done exec cmd=%s with status=%d res=(%d bytes)", command, status, len(res))
-                    if message.flags & MessageFlags.TEXT.value:
+                    if message.flags & MessageFlags.TEXT:
                         tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.RESULT, res)
-                    if message.flags & MessageFlags.STRING.value:
+                    if message.flags & MessageFlags.STRING:
                         tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.STATUS, status)
                     reply = coreapi.CoreExecMessage.pack(0, tlv_data)
                     return reply,
                 # execute the command with no response
                 else:
-                    if message.flags & MessageFlags.LOCAL.value:
+                    if message.flags & MessageFlags.LOCAL:
                         utils.mute_detach(command)
                     else:
                         node.cmd(command, wait=False)
@@ -821,7 +821,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             logging.exception("error getting object: %s", node_num)
             # XXX wait and queue this message to try again later
             # XXX maybe this should be done differently
-            if not message.flags & MessageFlags.LOCAL.value:
+            if not message.flags & MessageFlags.LOCAL:
                 time.sleep(0.125)
                 self.queue_message(message)
 
@@ -841,7 +841,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         if execute_server:
             try:
                 logging.info("executing: %s", execute_server)
-                if message.flags & MessageFlags.STRING.value:
+                if message.flags & MessageFlags.STRING:
                     old_session_ids = set(self.coreemu.sessions.keys())
                 sys.argv = shlex.split(execute_server)
                 file_name = sys.argv[0]
@@ -863,7 +863,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     # allow time for session creation
                     time.sleep(0.25)
 
-                if message.flags & MessageFlags.STRING.value:
+                if message.flags & MessageFlags.STRING:
                     new_session_ids = set(self.coreemu.sessions.keys())
                     new_sid = new_session_ids.difference(old_session_ids)
                     try:
@@ -1344,7 +1344,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :param coreapi.CoreFileMessage message: file message to handle
         :return: reply messages
         """
-        if message.flags & MessageFlags.ADD.value:
+        if message.flags & MessageFlags.ADD:
             node_num = message.get_tlv(FileTlvs.NODE)
             file_name = message.get_tlv(FileTlvs.NAME)
             file_type = message.get_tlv(FileTlvs.TYPE)
@@ -1494,7 +1494,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             if etime is None:
                 logging.warning("Event message scheduled event missing start time")
                 return ()
-            if message.flags & MessageFlags.ADD.value:
+            if message.flags & MessageFlags.ADD:
                 self.session.add_event(float(etime), node=node, name=name, data=data)
             else:
                 raise NotImplementedError
@@ -1586,7 +1586,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         user = message.get_tlv(SessionTlvs.USER)
         logging.debug("SESSION message flags=0x%x sessions=%s" % (message.flags, session_id_str))
 
-        if message.flags == 0:
+        if message.flags == MessageFlags.NONE:
             for index, session_id in enumerate(session_ids):
                 session_id = int(session_id)
                 if session_id == 0:
@@ -1610,7 +1610,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
                 if user:
                     session.set_user(user)
-        elif message.flags & MessageFlags.STRING.value and not message.flags & MessageFlags.ADD.value:
+        elif message.flags & MessageFlags.STRING and not message.flags & MessageFlags.ADD:
             # status request flag: send list of sessions
             return self.session_message(),
         else:
@@ -1623,7 +1623,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     logging.info("session %s not found (flags=0x%x)", session_id, message.flags)
                     continue
 
-                if message.flags & MessageFlags.ADD.value:
+                if message.flags & MessageFlags.ADD:
                     # connect to the first session that exists
                     logging.info("request to connect to session %s", session_id)
 
@@ -1648,9 +1648,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     if user:
                         self.session.set_user(user)
 
-                    if message.flags & MessageFlags.STRING.value:
+                    if message.flags & MessageFlags.STRING:
                         self.send_objects()
-                elif message.flags & MessageFlags.DELETE.value:
+                elif message.flags & MessageFlags.DELETE:
                     # shut down the specified session(s)
                     logging.info("request to terminate session %s", session_id)
                     self.coreemu.delete_session(session_id)
@@ -1670,7 +1670,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             tlv_data = b""
             tlv_data += coreapi.CoreNodeTlv.pack(NodeTlvs.NUMBER, node_id)
             tlv_data += coreapi.CoreNodeTlv.pack(NodeTlvs.EMULATION_ID, node_id)
-            reply = coreapi.CoreNodeMessage.pack(MessageFlags.ADD.value | MessageFlags.LOCAL.value, tlv_data)
+            reply = coreapi.CoreNodeMessage.pack(MessageFlags.ADD | MessageFlags.LOCAL, tlv_data)
 
             try:
                 self.sendall(reply)

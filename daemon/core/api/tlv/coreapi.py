@@ -701,11 +701,11 @@ class CoreMessage(object):
         """
         Pack CORE message data.
 
-        :param int message_flags: message flags to pack with data
+        :param Enum message_flags: message flags to pack with data
         :param Enum tlv_data: data to get length from for packing
         :return: combined header and tlv data
         """
-        header = struct.pack(cls.header_format, cls.message_type.value, message_flags, len(tlv_data))
+        header = struct.pack(cls.header_format, cls.message_type.value, message_flags.value, len(tlv_data))
         return header + tlv_data
 
     def add_tlv_data(self, key, value):

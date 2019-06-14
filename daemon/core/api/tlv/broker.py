@@ -245,13 +245,13 @@ class CoreBroker(object):
         count = None
         logging.debug("received message type: %s", MessageTypes(msgtype))
         # snoop exec response for remote interactive TTYs
-        if msgtype == MessageTypes.EXECUTE and msgflags.value & MessageFlags.TTY.value:
+        if msgtype == MessageTypes.EXECUTE and msgflags & MessageFlags.TTY:
             data = self.fixupremotetty(msghdr, msgdata, server.host)
             logging.debug("created remote tty message: %s", data)
         elif msgtype == MessageTypes.NODE:
             # snoop node delete response to decrement node counts
             # TODO Re-examine in later value-s pass
-            if msgflags.value & MessageFlags.DELETE.value:
+            if msgflags & MessageFlags.DELETE:
                 msg = coreapi.CoreNodeMessage(msgflags, msghdr, msgdata)
                 nodenum = msg.get_tlv(NodeTlvs.NUMBER)
                 if nodenum is not None:
@@ -689,7 +689,7 @@ class CoreBroker(object):
 
         # communicate this session"s current state to the server
         tlvdata = coreapi.CoreEventTlv.pack(EventTlvs.TYPE, self.session.state.value)
-        msg = coreapi.CoreEventMessage.pack(0, tlvdata)
+        msg = coreapi.CoreEventMessage.pack(MessageFlags.NONE, tlvdata)
         server.sock.send(msg)
 
         # send a Configuration message for the broker object and inform the
@@ -857,9 +857,9 @@ class CoreBroker(object):
                 logging.debug("handle locally(%s) and local node(%s)", handle_locally, localn)
                 if localn is None:
                     message = self.addlinkendpoints(message, servers1, servers2)
-                elif message.flags.value & MessageFlags.ADD.value:
+                elif message.flags & MessageFlags.ADD:
                     self.addtunnel(host, nn[0], nn[1], localn)
-                elif message.flags.value & MessageFlags.DELETE.value:
+                elif message.flags & MessageFlags.DELETE:
                     self.deltunnel(nn[0], nn[1])
                     handle_locally = False
             else:
@@ -1032,7 +1032,7 @@ class CoreBroker(object):
         # broadcast out instantiate complete
         tlvdata = b""
         tlvdata += coreapi.CoreEventTlv.pack(EventTlvs.TYPE, EventTypes.INSTANTIATION_COMPLETE.value)
-        message = coreapi.CoreEventMessage.pack(0, tlvdata)
+        message = coreapi.CoreEventMessage.pack(MessageFlags.NONE, tlvdata)
         for session_client in self.session_clients:
             session_client.sendall(message)
 

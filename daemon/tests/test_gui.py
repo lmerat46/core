@@ -28,7 +28,7 @@ def command_message(node, command):
     tlv_data = CoreExecuteTlv.pack(ExecuteTlvs.NODE, node.id)
     tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.NUMBER, 1)
     tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.COMMAND, command)
-    return coreapi.CoreExecMessage.pack(MessageFlags.STRING.value | MessageFlags.TEXT.value, tlv_data)
+    return coreapi.CoreExecMessage.pack(MessageFlags.STRING | MessageFlags.TEXT, tlv_data)
 
 
 def state_message(state):
@@ -39,7 +39,7 @@ def state_message(state):
     :return: packed event message
     """
     tlv_data = coreapi.CoreEventTlv.pack(EventTlvs.TYPE, state.value)
-    return coreapi.CoreEventMessage.pack(MessageFlags.NONE.value, tlv_data)
+    return coreapi.CoreEventMessage.pack(MessageFlags.NONE, tlv_data)
 
 
 def switch_link_message(switch, node, address, prefix_len):
@@ -58,7 +58,7 @@ def switch_link_message(switch, node, address, prefix_len):
     tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_NUMBER, 0)
     tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_IP4, address)
     tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_IP4_MASK, prefix_len)
-    return coreapi.CoreLinkMessage.pack(MessageFlags.ADD.value, tlv_data)
+    return coreapi.CoreLinkMessage.pack(MessageFlags.ADD, tlv_data)
 
 
 def run_cmd(node, exec_cmd):
@@ -73,7 +73,7 @@ def run_cmd(node, exec_cmd):
     # tlv_data = CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, node.id)
     # tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.NUMBER.value, 1)
     # tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.COMMAND.value, exec_cmd)
-    # message = coreapi.CoreExecMessage.pack(MessageFlags.STRING.value | MessageFlags.TEXT.value, tlv_data)
+    # message = coreapi.CoreExecMessage.pack(MessageFlags.STRING | MessageFlags.TEXT, tlv_data)
     message = command_message(node, exec_cmd)
     node.session.broker.handlerawmsg(message)
 
