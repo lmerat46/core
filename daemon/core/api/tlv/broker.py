@@ -701,7 +701,7 @@ class CoreBroker(object):
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.VALUES,
                                               "%s:%s:%s" % (server.name, server.host, server.port))
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.SESSION, "%s" % self.session.id)
-        msg = coreapi.CoreConfMessage.pack(0, tlvdata)
+        msg = coreapi.CoreConfMessage.pack(MessageFlags.NONE, tlvdata)
         server.sock.send(msg)
 
     @staticmethod

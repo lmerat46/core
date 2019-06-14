@@ -226,7 +226,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             (EventTlvs.TIME, event_data.time),
             (EventTlvs.SESSION, event_data.session)
         ])
-        message = coreapi.CoreEventMessage.pack(event_data.event_type.value, tlv_data)
+        message = coreapi.CoreEventMessage.pack(event_data.event_type, tlv_data)
 
         try:
             self.sendall(message)
@@ -253,7 +253,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             (FileTlvs.DATA, file_data.data),
             (FileTlvs.COMPRESSED_DATA, file_data.compressed_data),
         ])
-        message = coreapi.CoreFileMessage.pack(file_data.message_type.value, tlv_data)
+        message = coreapi.CoreFileMessage.pack(file_data.message_type, tlv_data)
 
         try:
             self.sendall(message)
@@ -358,7 +358,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             (LinkTlvs.OPAQUE, link_data.opaque)
         ])
 
-        message = coreapi.CoreLinkMessage.pack(link_data.message_type.value, tlv_data)
+        message = coreapi.CoreLinkMessage.pack(link_data.message_type, tlv_data)
 
         try:
             self.sendall(message)
@@ -684,7 +684,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 if result and message.flags & MessageFlags.STRING:
                     tlvdata = b""
                     tlvdata += coreapi.CoreNodeTlv.pack(NodeTlvs.NUMBER, node_id)
-                    flags = MessageFlags.DELETE | MessageFlags.LOCAL
+                    flags = MessageFlags(MessageFlags.DELETE.value | MessageFlags.LOCAL.value)
                     replies.append(coreapi.CoreNodeMessage.pack(flags, tlvdata))
         # node update
         else:
@@ -1670,7 +1670,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             tlv_data = b""
             tlv_data += coreapi.CoreNodeTlv.pack(NodeTlvs.NUMBER, node_id)
             tlv_data += coreapi.CoreNodeTlv.pack(NodeTlvs.EMULATION_ID, node_id)
-            reply = coreapi.CoreNodeMessage.pack(MessageFlags.ADD | MessageFlags.LOCAL, tlv_data)
+            reply = coreapi.CoreNodeMessage.pack(MessageFlags(MessageFlags.ADD.value | MessageFlags.LOCAL.value), tlv_data)
 
             try:
                 self.sendall(reply)

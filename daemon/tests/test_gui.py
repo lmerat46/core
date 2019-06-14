@@ -3,6 +3,7 @@ Unit tests for testing with a CORE switch.
 """
 
 import threading
+import logging
 
 from core.api.tlv import coreapi, dataconversion
 from core.api.tlv.coreapi import CoreExecuteTlv
@@ -28,7 +29,7 @@ def command_message(node, command):
     tlv_data = CoreExecuteTlv.pack(ExecuteTlvs.NODE, node.id)
     tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.NUMBER, 1)
     tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.COMMAND, command)
-    return coreapi.CoreExecMessage.pack(MessageFlags.STRING | MessageFlags.TEXT, tlv_data)
+    return coreapi.CoreExecMessage.pack(MessageFlags(MessageFlags.STRING.value | MessageFlags.TEXT.value), tlv_data)
 
 
 def state_message(state):
@@ -73,7 +74,7 @@ def run_cmd(node, exec_cmd):
     # tlv_data = CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, node.id)
     # tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.NUMBER.value, 1)
     # tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.COMMAND.value, exec_cmd)
-    # message = coreapi.CoreExecMessage.pack(MessageFlags.STRING | MessageFlags.TEXT, tlv_data)
+    # message = coreapi.CoreExecMessage.pack(MessageFlags(MessageFlags.STRING.value | MessageFlags.TEXT.value), tlv_data)
     message = command_message(node, exec_cmd)
     node.session.broker.handlerawmsg(message)
 
@@ -90,7 +91,7 @@ def run_cmd(node, exec_cmd):
         message_data = server.sock.recv(message_length)
 
         # If we get the right response return the results
-        print("received response message: %s" % message_type)
+        logging.info("received response message: %s" % message_type)
         if message_type == MessageTypes.EXECUTE:
             message = coreapi.CoreExecMessage(message_flags, message_header, message_data)
             result = message.get_tlv(ExecuteTlvs.RESULT)

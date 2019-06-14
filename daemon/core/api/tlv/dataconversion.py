@@ -36,7 +36,7 @@ def convert_node(node_data):
         (NodeTlvs.ICON, node_data.icon),
         (NodeTlvs.OPAQUE, node_data.opaque)
     ])
-    return coreapi.CoreNodeMessage.pack(node_data.message_type.value, tlv_data)
+    return coreapi.CoreNodeMessage.pack(node_data.message_type, tlv_data)
 
 
 def convert_config(config_data):
@@ -62,4 +62,4 @@ def convert_config(config_data):
         (ConfigTlvs.NETWORK_ID, config_data.network_id),
         (ConfigTlvs.OPAQUE, config_data.opaque),
     ])
-    return coreapi.CoreConfMessage.pack(config_data.message_type.value, tlv_data)
+    return coreapi.CoreConfMessage.pack(config_data.message_type, tlv_data)
