@@ -192,17 +192,17 @@ class CoreHandler(socketserver.BaseRequestHandler):
         if num_sessions > 0:
             tlv_data = b""
             if len(session_ids) > 0:
-                tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.NUMBER.value, session_ids)
+                tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.NUMBER, session_ids)
             if len(names) > 0:
-                tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.NAME.value, names)
+                tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.NAME, names)
             if len(files) > 0:
-                tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.FILE.value, files)
+                tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.FILE, files)
             if len(node_counts) > 0:
-                tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.NODE_COUNT.value, node_counts)
+                tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.NODE_COUNT, node_counts)
             if len(dates) > 0:
-                tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.DATE.value, dates)
+                tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.DATE, dates)
             if len(thumbs) > 0:
-                tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.THUMB.value, thumbs)
+                tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.THUMB, thumbs)
             message = coreapi.CoreSessionMessage.pack(flags, tlv_data)
         else:
             message = None
@@ -220,13 +220,13 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         tlv_data = structutils.pack_values(coreapi.CoreEventTlv, [
             (EventTlvs.NODE, event_data.node),
-            (EventTlvs.TYPE, event_data.event_type),
+            (EventTlvs.TYPE, event_data.event_type.value),
             (EventTlvs.NAME, event_data.name),
             (EventTlvs.DATA, event_data.data),
             (EventTlvs.TIME, event_data.time),
             (EventTlvs.SESSION, event_data.session)
         ])
-        message = coreapi.CoreEventMessage.pack(0, tlv_data)
+        message = coreapi.CoreEventMessage.pack(event_data.event_type, tlv_data)
 
         try:
             self.sendall(message)
@@ -374,21 +374,21 @@ class CoreHandler(socketserver.BaseRequestHandler):
         logging.info("GUI has connected to session %d at %s", self.session.id, time.ctime())
 
         tlv_data = b""
-        tlv_data += coreapi.CoreRegisterTlv.pack(RegisterTlvs.EXECUTE_SERVER.value, "core-daemon")
-        tlv_data += coreapi.CoreRegisterTlv.pack(RegisterTlvs.EMULATION_SERVER.value, "core-daemon")
-        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.broker.config_type.value, self.session.broker.name)
-        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.location.config_type.value, self.session.location.name)
-        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.mobility.config_type.value, self.session.mobility.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(RegisterTlvs.EXECUTE_SERVER, "core-daemon")
+        tlv_data += coreapi.CoreRegisterTlv.pack(RegisterTlvs.EMULATION_SERVER, "core-daemon")
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.broker.config_type, self.session.broker.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.location.config_type, self.session.location.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.mobility.config_type, self.session.mobility.name)
         for model_name in self.session.mobility.models:
             model_class = self.session.mobility.models[model_name]
-            tlv_data += coreapi.CoreRegisterTlv.pack(model_class.config_type.value, model_class.name)
-        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.services.config_type.value, self.session.services.name)
-        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.emane.config_type.value, self.session.emane.name)
+            tlv_data += coreapi.CoreRegisterTlv.pack(model_class.config_type, model_class.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.services.config_type, self.session.services.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.emane.config_type, self.session.emane.name)
         for model_name in self.session.emane.models:
             model_class = self.session.emane.models[model_name]
-            tlv_data += coreapi.CoreRegisterTlv.pack(model_class.config_type.value, model_class.name)
-        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.options.config_type.value, self.session.options.name)
-        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.metadata.config_type.value, self.session.metadata.name)
+            tlv_data += coreapi.CoreRegisterTlv.pack(model_class.config_type, model_class.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.options.config_type, self.session.options.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.metadata.config_type, self.session.metadata.name)
 
         return coreapi.CoreRegMessage.pack(MessageFlags.ADD.value, tlv_data)
 
@@ -668,20 +668,20 @@ class CoreHandler(socketserver.BaseRequestHandler):
         if services:
             node_options.services = services.split("|")
 
-        if message.flags.value & MessageFlags.ADD.value:
+        if message.flags & MessageFlags.ADD.value:
             node = self.session.add_node(node_type, node_id, node_options)
             if node:
-                if message.flags.value & MessageFlags.STRING.value:
+                if message.flags & MessageFlags.STRING.value:
                     self.node_status_request[node.id] = True
 
                 if self.session.state == EventTypes.RUNTIME_STATE:
                     self.send_node_emulation_id(node.id)
-        elif message.flags.value & MessageFlags.DELETE.value:
+        elif message.flags & MessageFlags.DELETE.value:
             with self._shutdown_lock:
                 result = self.session.delete_node(node_id)
 
                 # if we deleted a node broadcast out its removal
-                if result and message.flags.value & MessageFlags.STRING.value:
+                if result and message.flags & MessageFlags.STRING.value:
                     tlvdata = b""
                     tlvdata += coreapi.CoreNodeTlv.pack(NodeTlvs.NUMBER.value, node_id)
                     flags = MessageFlags.DELETE.value | MessageFlags.LOCAL.value
@@ -765,7 +765,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         command = message.get_tlv(ExecuteTlvs.COMMAND)
 
         # local flag indicates command executed locally, not on a node
-        if node_num is None and not message.flags.value & MessageFlags.LOCAL.value:
+        if node_num is None and not message.flags & MessageFlags.LOCAL.value:
             raise ValueError("Execute Message is missing node number.")
 
         if execute_num is None:
@@ -785,7 +785,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.NUMBER.value, execute_num)
             tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.COMMAND.value, command)
 
-            if message.flags.value & MessageFlags.TTY.value:
+            if message.flags & MessageFlags.TTY.value:
                 if node_num is None:
                     raise NotImplementedError
                 # echo back exec message with cmd for spawning interactive terminal
@@ -798,22 +798,22 @@ class CoreHandler(socketserver.BaseRequestHandler):
             else:
                 logging.info("execute message with cmd=%s", command)
                 # execute command and send a response
-                if message.flags.value & MessageFlags.STRING.value or message.flags.value & MessageFlags.TEXT.value:
+                if message.flags & MessageFlags.STRING.value or message.flags & MessageFlags.TEXT.value:
                     # shlex.split() handles quotes within the string
-                    if message.flags.value & MessageFlags.LOCAL.value:
+                    if message.flags & MessageFlags.LOCAL.value:
                         status, res = utils.cmd_output(command)
                     else:
                         status, res = node.cmd_output(command)
                     logging.info("done exec cmd=%s with status=%d res=(%d bytes)", command, status, len(res))
-                    if message.flags.value & MessageFlags.TEXT.value:
+                    if message.flags & MessageFlags.TEXT.value:
                         tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.RESULT.value, res)
-                    if message.flags.value & MessageFlags.STRING.value:
+                    if message.flags & MessageFlags.STRING.value:
                         tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.STATUS.value, status)
                     reply = coreapi.CoreExecMessage.pack(0, tlv_data)
                     return reply,
                 # execute the command with no response
                 else:
-                    if message.flags.value & MessageFlags.LOCAL.value:
+                    if message.flags & MessageFlags.LOCAL.value:
                         utils.mute_detach(command)
                     else:
                         node.cmd(command, wait=False)
@@ -841,7 +841,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         if execute_server:
             try:
                 logging.info("executing: %s", execute_server)
-                if message.flags.value & MessageFlags.STRING.value:
+                if message.flags & MessageFlags.STRING.value:
                     old_session_ids = set(self.coreemu.sessions.keys())
                 sys.argv = shlex.split(execute_server)
                 file_name = sys.argv[0]
@@ -863,7 +863,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     # allow time for session creation
                     time.sleep(0.25)
 
-                if message.flags.value & MessageFlags.STRING.value:
+                if message.flags & MessageFlags.STRING.value:
                     new_session_ids = set(self.coreemu.sessions.keys())
                     new_sid = new_session_ids.difference(old_session_ids)
                     try:
@@ -1344,7 +1344,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :param coreapi.CoreFileMessage message: file message to handle
         :return: reply messages
         """
-        if message.flags.value & MessageFlags.ADD.value:
+        if message.flags & MessageFlags.ADD.value:
             node_num = message.get_tlv(FileTlvs.NODE)
             file_name = message.get_tlv(FileTlvs.NAME)
             file_type = message.get_tlv(FileTlvs.TYPE)
@@ -1494,7 +1494,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             if etime is None:
                 logging.warning("Event message scheduled event missing start time")
                 return ()
-            if message.flags.value & MessageFlags.ADD.value:
+            if message.flags & MessageFlags.ADD.value:
                 self.session.add_event(float(etime), node=node, name=name, data=data)
             else:
                 raise NotImplementedError
@@ -1610,7 +1610,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
                 if user:
                     session.set_user(user)
-        elif message.flags.value & MessageFlags.STRING.value and not message.flags.value & MessageFlags.ADD.value:
+        elif message.flags & MessageFlags.STRING.value and not message.flags & MessageFlags.ADD.value:
             # status request flag: send list of sessions
             return self.session_message(),
         else:
@@ -1623,7 +1623,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     logging.info("session %s not found (flags=0x%x)", session_id, message.flags)
                     continue
 
-                if message.flags.value & MessageFlags.ADD.value:
+                if message.flags & MessageFlags.ADD.value:
                     # connect to the first session that exists
                     logging.info("request to connect to session %s", session_id)
 
@@ -1648,9 +1648,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     if user:
                         self.session.set_user(user)
 
-                    if message.flags.value & MessageFlags.STRING.value:
+                    if message.flags & MessageFlags.STRING.value:
                         self.send_objects()
-                elif message.flags.value & MessageFlags.DELETE.value:
+                elif message.flags & MessageFlags.DELETE.value:
                     # shut down the specified session(s)
                     logging.info("request to terminate session %s", session_id)
                     self.coreemu.delete_session(session_id)
