@@ -7,6 +7,11 @@ from enum import Enum
 CORE_API_VERSION = "1.23"
 CORE_API_PORT = 4038
 
+class NoneTypes(Enum):
+    """
+    CORE catch-all NONE type
+    """
+    NONE = 0x00
 
 class MessageTypes(Enum):
     """
@@ -33,9 +38,17 @@ class MessageFlags(Enum):
     DELETE = 0x02
     CRI = 0x04
     LOCAL = 0x08
+    ADD_AND_LOCAL = 0x09
+    DELETE_AND_LOCAL = 0x0A
     STRING = 0x10
     TEXT = 0x20
+    STRING_AND_TEXT = 0x30
     TTY = 0x40
+
+    def __or__(self, other):
+        return self.value | other.value
+    def __and__(self, other):
+        return self.value & other.value
 
 
 class NodeTlvs(Enum):

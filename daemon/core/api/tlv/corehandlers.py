@@ -23,6 +23,7 @@ from core.emulator.data import FileData
 from core.emulator.emudata import InterfaceData
 from core.emulator.emudata import LinkOptions
 from core.emulator.emudata import NodeOptions
+from core.emulator.enumerations import NoneTypes
 from core.emulator.enumerations import ConfigDataTypes
 from core.emulator.enumerations import ConfigFlags
 from core.emulator.enumerations import ConfigTlvs
@@ -290,7 +291,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             (ExceptionTlvs.DATE, exception_data.date),
             (ExceptionTlvs.TEXT, exception_data.text)
         ])
-        message = coreapi.CoreExceptionMessage.pack(0, tlv_data)
+        message = coreapi.CoreExceptionMessage.pack(NoneTypes.NONE, tlv_data)
 
         try:
             self.sendall(message)
@@ -491,6 +492,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         try:
             # TODO: this needs to be removed, make use of the broadcast message methods
+            message.flags = MessageFlags(message.flags)
             replies = message_handler(message)
             self.dispatch_replies(replies, message)
         except:
@@ -809,7 +811,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                         tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.RESULT, res)
                     if message.flags & MessageFlags.STRING:
                         tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.STATUS, status)
-                    reply = coreapi.CoreExecMessage.pack(0, tlv_data)
+                    reply = coreapi.CoreExecMessage.pack(NoneTypes.NONE, tlv_data)
                     return reply,
                 # execute the command with no response
                 else:
@@ -888,13 +890,13 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
                     tlv_data = coreapi.CoreRegisterTlv.pack(RegisterTlvs.EXECUTE_SERVER.value, execute_server)
                     tlv_data += coreapi.CoreRegisterTlv.pack(RegisterTlvs.SESSION.value, "%s" % sid)
-                    message = coreapi.CoreRegMessage.pack(0, tlv_data)
+                    message = coreapi.CoreRegMessage.pack(NoneType.NONE, tlv_data)
                     replies.append(message)
             except Exception as e:
                 logging.exception("error executing: %s", execute_server)
                 tlv_data = coreapi.CoreExceptionTlv.pack(ExceptionTlvs.LEVEL.value, 2)
                 tlv_data += coreapi.CoreExceptionTlv.pack(ExceptionTlvs.TEXT.value, str(e))
-                message = coreapi.CoreExceptionMessage.pack(0, tlv_data)
+                message = coreapi.CoreExceptionMessage.pack(NoneType.NONE, tlv_data)
                 replies.append(message)
 
             return replies

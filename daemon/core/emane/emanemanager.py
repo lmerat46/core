@@ -507,7 +507,7 @@ class EmaneManager(ModelManager):
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.OBJECT.value, "session")
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.TYPE.value, 0)
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.VALUES.value, vals)
-        rawmsg = coreapi.CoreConfMessage.pack(0, tlvdata)
+        rawmsg = coreapi.CoreConfMessage.pack(ConfigFlags.NONE, tlvdata)
         msghdr = rawmsg[:coreapi.CoreMessage.header_len]
         msg = coreapi.CoreConfMessage(flags=0, hdr=msghdr, data=rawmsg[coreapi.CoreMessage.header_len:])
         self.session.broker.handle_message(msg)
