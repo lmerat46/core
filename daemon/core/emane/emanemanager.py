@@ -156,7 +156,7 @@ class EmaneManager(ModelManager):
             custom_models_path = self.session.options.get_config("emane_models_dir")
             if custom_models_path:
                 emane_models = utils.load_classes(custom_models_path, EmaneModel)
-                logging.warning("loading emane_models: %s", emane_models)
+                logging.info("loading emane_models: %s", emane_models)
                 self.load_models(emane_models)
         except CoreCommandError:
             logging.info("emane is not installed")
@@ -569,14 +569,14 @@ class EmaneManager(ModelManager):
         """
         Build a platform.xml file now that all nodes are configured.
         """
-        logging.warning("building platform xml with ctrlnet %s", ctrlnet)
+        logging.info("building platform xml with ctrlnet %s", ctrlnet)
         nemid = int(self.get_config("nem_id_start"))
         platform_xmls = {}
 
         # assume self._objslock is already held here
         for key in sorted(self._emane_nodes.keys()):
             emane_node = self._emane_nodes[key]
-            logging.warning("trying to build with emane_node: %s, emane_node.model: %s, nemid, %s, platform_xmls: %s", emane_node, emane_node.model, nemid, platform_xmls)
+            logging.debug("trying to build with emane_node: %s, emane_node.model: %s, nemid, %s, platform_xmls: %s", emane_node, emane_node.model, nemid, platform_xmls)
             nemid = emanexml.build_node_platform_xml(self, ctrlnet, emane_node, nemid, platform_xmls)
 
     def buildnemxml(self):
@@ -584,10 +584,9 @@ class EmaneManager(ModelManager):
         Builds the xxxnem.xml, xxxmac.xml, and xxxphy.xml files which
         are defined on a per-EmaneNode basis.
         """
-        logging.warning("running emanexml's buildnemxml")
         for key in sorted(self._emane_nodes.keys()):
             emane_node = self._emane_nodes[key]
-            logging.warning("building xml for emane_node: %s, model: %s", emane_node, emane_node.model)
+            logging.debug("building xml for emane_node: %s, model: %s", emane_node, emane_node.model)
             emanexml.build_xml_files(self, emane_node)
 
     def buildtransportxml(self):
@@ -629,7 +628,7 @@ class EmaneManager(ModelManager):
         Start one EMANE daemon per node having a radio.
         Add a control network even if the user has not configured one.
         """
-        logging.warning("starting emane daemons...")
+        logging.debug("starting emane daemons...")
         loglevel = str(EmaneManager.DEFAULT_LOG_LEVEL)
         cfgloglevel = self.session.options.get_config_int("emane_log_level")
         realtime = self.session.options.get_config_bool("emane_realtime", default=True)
