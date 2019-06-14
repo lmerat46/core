@@ -226,7 +226,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             (EventTlvs.TIME, event_data.time),
             (EventTlvs.SESSION, event_data.session)
         ])
-        message = coreapi.CoreEventMessage.pack(event_data.event_type, tlv_data)
+        message = coreapi.CoreEventMessage.pack(event_data.event_type.value, tlv_data)
 
         try:
             self.sendall(message)
@@ -335,7 +335,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             (LinkTlvs.BURST, link_data.burst),
             (LinkTlvs.SESSION, link_data.session),
             (LinkTlvs.MBURST, link_data.mburst),
-            (LinkTlvs.TYPE, link_data.link_type),
+            (LinkTlvs.TYPE, link_data.link_type.value),
             (LinkTlvs.GUI_ATTRIBUTES, link_data.gui_attributes),
             (LinkTlvs.UNIDIRECTIONAL, link_data.unidirectional),
             (LinkTlvs.EMULATION_ID, link_data.emulation_id),
@@ -358,7 +358,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             (LinkTlvs.OPAQUE, link_data.opaque)
         ])
 
-        message = coreapi.CoreLinkMessage.pack(link_data.message_type, tlv_data)
+        message = coreapi.CoreLinkMessage.pack(link_data.message_type.value, tlv_data)
 
         try:
             self.sendall(message)
@@ -683,7 +683,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 # if we deleted a node broadcast out its removal
                 if result and message.flags & MessageFlags.STRING.value:
                     tlvdata = b""
-                    tlvdata += coreapi.CoreNodeTlv.pack(NodeTlvs.NUMBER.value, node_id)
+                    tlvdata += coreapi.CoreNodeTlv.pack(NodeTlvs.NUMBER, node_id)
                     flags = MessageFlags.DELETE.value | MessageFlags.LOCAL.value
                     replies.append(coreapi.CoreNodeMessage.pack(flags, tlvdata))
         # node update
@@ -781,9 +781,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
             # build common TLV items for reply
             tlv_data = b""
             if node_num is not None:
-                tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, node_num)
-            tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.NUMBER.value, execute_num)
-            tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.COMMAND.value, command)
+                tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.NODE, node_num)
+            tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.NUMBER, execute_num)
+            tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.COMMAND, command)
 
             if message.flags & MessageFlags.TTY.value:
                 if node_num is None:
@@ -792,7 +792,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 if command == "bash":
                     command = "/bin/bash"
                 res = node.termcmdstring(command)
-                tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.RESULT.value, res)
+                tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.RESULT, res)
                 reply = coreapi.CoreExecMessage.pack(MessageFlags.TTY.value, tlv_data)
                 return reply,
             else:
@@ -806,9 +806,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
                         status, res = node.cmd_output(command)
                     logging.info("done exec cmd=%s with status=%d res=(%d bytes)", command, status, len(res))
                     if message.flags & MessageFlags.TEXT.value:
-                        tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.RESULT.value, res)
+                        tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.RESULT, res)
                     if message.flags & MessageFlags.STRING.value:
-                        tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.STATUS.value, status)
+                        tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.STATUS, status)
                     reply = coreapi.CoreExecMessage.pack(0, tlv_data)
                     return reply,
                 # execute the command with no response
@@ -1668,8 +1668,8 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         if node_id in self.node_status_request:
             tlv_data = b""
-            tlv_data += coreapi.CoreNodeTlv.pack(NodeTlvs.NUMBER.value, node_id)
-            tlv_data += coreapi.CoreNodeTlv.pack(NodeTlvs.EMULATION_ID.value, node_id)
+            tlv_data += coreapi.CoreNodeTlv.pack(NodeTlvs.NUMBER, node_id)
+            tlv_data += coreapi.CoreNodeTlv.pack(NodeTlvs.EMULATION_ID, node_id)
             reply = coreapi.CoreNodeMessage.pack(MessageFlags.ADD.value | MessageFlags.LOCAL.value, tlv_data)
 
             try:
